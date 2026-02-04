@@ -10,7 +10,7 @@ export interface ClassificationResult {
 
 export async function classifyThought(thought: string): Promise<ClassificationResult> {
   const message = await client.messages.create({
-    model: "claude-haiku-4-5-20250514",
+    model: "claude-haiku-4-5-20251101",
     max_tokens: 1024,
     messages: [
       {
