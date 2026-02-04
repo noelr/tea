@@ -122,4 +122,11 @@ export function getThoughtsByTag(tagName: string): ThoughtWithClassifications[] 
   return thoughtIds.map((row) => getThoughtById(row.thought_id)!).filter(Boolean);
 }
 
+export function getAllActions(): string[] {
+  const result = db
+    .prepare("SELECT description FROM classifications WHERE type = 'action' ORDER BY id DESC")
+    .all() as { description: string }[];
+  return result.map((r) => r.description);
+}
+
 export default db;

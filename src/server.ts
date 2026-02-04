@@ -4,6 +4,7 @@ import {
   addTag,
   getAllThoughts,
   getAllTags,
+  getAllActions,
   getThoughtsByTag,
   type ThoughtWithClassifications,
   type Classification,
@@ -119,8 +120,15 @@ const server = Bun.serve({
         // Create the thought
         const thought = createThought(content);
 
-        // Classify the thought using AI
-        const classifications = await classifyThought(content);
+        // Get context for the classifier
+        const existingEntities = getAllTags();
+        const openActions = getAllActions();
+
+        // Classify the thought using AI with context
+        const classifications = await classifyThought(content, {
+          existingEntities,
+          openActions,
+        });
 
         // Store classifications
         const storedClassifications: Classification[] = [];
