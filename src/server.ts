@@ -52,6 +52,11 @@ function groupThoughtsByTime(thoughts: ThoughtWithClassifications[]): GroupedTho
 
 const port = process.env.PORT || 3000;
 
+// Check for API key at startup
+if (!process.env.ANTHROPIC_API_KEY) {
+  console.warn("⚠️  WARNING: ANTHROPIC_API_KEY is not set. Classification will fail.");
+}
+
 const server = Bun.serve({
   port,
   async fetch(req) {
@@ -123,8 +128,9 @@ const server = Bun.serve({
         );
       } catch (error) {
         console.error("Error creating thought:", error);
+        const message = error instanceof Error ? error.message : "Unknown error";
         return Response.json(
-          { error: "Failed to create thought" },
+          { error: `Failed to create thought: ${message}` },
           { status: 500, headers: corsHeaders }
         );
       }

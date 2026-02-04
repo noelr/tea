@@ -306,15 +306,17 @@
           body: JSON.stringify({ content })
         });
 
+        const data = await response.json();
+
         if (!response.ok) {
-          throw new Error('Failed to capture thought');
+          throw new Error(data.error || 'Failed to capture thought');
         }
 
         input.value = '';
         await loadThoughts();
       } catch (error) {
         console.error('Failed to capture thought:', error);
-        alert('Failed to capture thought. Please try again.');
+        alert(error.message || 'Failed to capture thought. Please try again.');
       } finally {
         btn.disabled = false;
         btn.textContent = 'Capture Thought';
