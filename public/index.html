@@ -130,7 +130,6 @@
 
     .classification-group.events h4 { color: #9c27b0; }
     .classification-group.actions h4 { color: #f57c00; }
-    .classification-group.ideas h4 { color: #2196f3; }
 
     .classification-item {
       font-size: 14px;
@@ -147,11 +146,6 @@
     .classification-group.actions .classification-item {
       background: #fff3e0;
       color: #e65100;
-    }
-
-    .classification-group.ideas .classification-item {
-      background: #e3f2fd;
-      color: #1565c0;
     }
 
     .empty-state {
@@ -248,7 +242,6 @@
     function renderThoughtCard(thought) {
       const events = thought.classifications.filter(c => c.type === 'event');
       const actions = thought.classifications.filter(c => c.type === 'action');
-      const ideas = thought.classifications.filter(c => c.type === 'idea');
 
       const time = new Date(thought.created_at + 'Z').toLocaleString();
 
@@ -267,12 +260,6 @@
               <div class="classification-group actions">
                 <h4>✅ Actions</h4>
                 ${actions.map(a => `<div class="classification-item">${escapeHtml(a.description)}</div>`).join('')}
-              </div>
-            ` : ''}
-            ${ideas.length > 0 ? `
-              <div class="classification-group ideas">
-                <h4>💡 Ideas</h4>
-                ${ideas.map(i => `<div class="classification-item">${escapeHtml(i.description)}</div>`).join('')}
               </div>
             ` : ''}
           </div>

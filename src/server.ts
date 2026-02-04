@@ -107,11 +107,6 @@ const server = Bun.serve({
         // Store classifications
         const storedClassifications: Classification[] = [];
 
-        for (const idea of classifications.ideas) {
-          const c = addClassification(thought.id, "idea", idea);
-          storedClassifications.push(c);
-        }
-
         for (const event of classifications.events) {
           const c = addClassification(thought.id, "event", event);
           storedClassifications.push(c);

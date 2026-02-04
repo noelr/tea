@@ -15,7 +15,7 @@ db.run(`
   CREATE TABLE IF NOT EXISTS classifications (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     thought_id INTEGER NOT NULL,
-    type TEXT NOT NULL CHECK (type IN ('idea', 'event', 'action')),
+    type TEXT NOT NULL CHECK (type IN ('event', 'action')),
     description TEXT NOT NULL,
     FOREIGN KEY (thought_id) REFERENCES thoughts(id) ON DELETE CASCADE
   )
@@ -30,7 +30,7 @@ export interface Thought {
 export interface Classification {
   id: number;
   thought_id: number;
-  type: "idea" | "event" | "action";
+  type: "event" | "action";
   description: string;
 }
 

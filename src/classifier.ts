@@ -3,7 +3,6 @@ import Anthropic from "@anthropic-ai/sdk";
 const client = new Anthropic();
 
 export interface ClassificationResult {
-  ideas: string[];
   events: string[];
   actions: string[];
 }
@@ -15,16 +14,13 @@ export async function classifyThought(thought: string): Promise<ClassificationRe
     messages: [
       {
         role: "user",
-        content: `Analyze the following thought/note and extract any ideas, events, and actions from it.
+        content: `Analyze the following thought/note and extract events and actions from it.
 
-A thought can contain multiple items of each type:
 - **Events**: Things that happened or are happening (e.g., "Brigitte called", "meeting was held")
-- **Actions**: Things that need to be done or tasks (e.g., "create a new export", "send email")
-- **Ideas**: Concepts, insights, or thoughts worth noting (e.g., "we could improve the UI", "interesting approach")
+- **Actions**: Tasks with a clear, measurable outcome (e.g., "create a new export for EDAVis", "send report to client"). Only include actions that have a concrete deliverable or verifiable completion state. Do NOT include vague intentions or ideas.
 
 Respond in JSON format only, with no additional text:
 {
-  "ideas": ["description of idea 1", "description of idea 2"],
   "events": ["description of event 1", "description of event 2"],
   "actions": ["description of action 1", "description of action 2"]
 }
@@ -47,12 +43,11 @@ Thought to analyze:
     }
     const result = JSON.parse(jsonMatch[0]) as ClassificationResult;
     return {
-      ideas: result.ideas || [],
       events: result.events || [],
       actions: result.actions || [],
     };
   } catch (error) {
     console.error("Failed to parse classification response:", responseText);
-    return { ideas: [], events: [], actions: [] };
+    return { events: [], actions: [] };
   }
 }
