@@ -71,9 +71,9 @@ export function createThought(content: string): Thought {
   return stmt.get(content) as Thought;
 }
 
-// Get all unreviewed thoughts
+// Get all unreviewed thoughts (newest first)
 export function getUnreviewedThoughts(): Thought[] {
-  return db.prepare("SELECT * FROM thoughts WHERE reviewed = 0 ORDER BY created_at ASC").all() as Thought[];
+  return db.prepare("SELECT * FROM thoughts WHERE reviewed = 0 ORDER BY created_at DESC").all() as Thought[];
 }
 
 // Mark thoughts as reviewed

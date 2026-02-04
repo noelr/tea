@@ -37,18 +37,16 @@
       margin-bottom: 20px;
     }
 
-    .input-section textarea {
+    .input-section input[type="text"] {
       width: 100%;
       padding: 15px;
       border: 2px solid #e0e0e0;
       border-radius: 8px;
       font-size: 16px;
-      resize: vertical;
-      min-height: 80px;
       font-family: inherit;
     }
 
-    .input-section textarea:focus {
+    .input-section input[type="text"]:focus {
       outline: none;
       border-color: #007bff;
     }
@@ -450,7 +448,7 @@
     <h1>Thought Capture</h1>
 
     <div class="input-section">
-      <textarea id="thoughtInput" placeholder="Enter your thought..."></textarea>
+      <input type="text" id="thoughtInput" placeholder="Enter your thought..." onkeydown="if(event.key==='Enter')captureThought()">
       <div class="button-row">
         <button id="captureBtn" class="btn btn-primary" onclick="captureThought()">Capture</button>
         <button id="reviewBtn" class="btn btn-success" onclick="startReview()">Review</button>
@@ -813,12 +811,6 @@
     }
 
     // Keyboard shortcuts
-    document.getElementById('thoughtInput').addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-        captureThought();
-      }
-    });
-
     document.getElementById('chatInput').addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         sendChat();
