@@ -1,9 +1,13 @@
 import {
   createThought,
   addClassification,
+  addTag,
   getAllThoughts,
+  getAllTags,
+  getThoughtsByTag,
   type ThoughtWithClassifications,
   type Classification,
+  type Tag,
 } from "./db";
 import { classifyThought } from "./classifier";
 
@@ -88,6 +92,20 @@ const server = Bun.serve({
       return Response.json(grouped, { headers: corsHeaders });
     }
 
+    // API: Get all unique tags
+    if (url.pathname === "/api/tags" && req.method === "GET") {
+      const tags = getAllTags();
+      return Response.json(tags, { headers: corsHeaders });
+    }
+
+    // API: Get thoughts by tag
+    const tagMatch = url.pathname.match(/^\/api\/tags\/(.+)$/);
+    if (tagMatch && req.method === "GET") {
+      const tagName = decodeURIComponent(tagMatch[1]);
+      const thoughts = getThoughtsByTag(tagName);
+      return Response.json(thoughts, { headers: corsHeaders });
+    }
+
     // API: Create a new thought
     if (url.pathname === "/api/thoughts" && req.method === "POST") {
       try {
@@ -117,8 +135,15 @@ const server = Bun.serve({
           storedClassifications.push(c);
         }
 
+        // Store tags
+        const storedTags: Tag[] = [];
+        for (const entity of classifications.entities) {
+          const t = addTag(thought.id, entity);
+          storedTags.push(t);
+        }
+
         return Response.json(
-          { ...thought, classifications: storedClassifications },
+          { ...thought, classifications: storedClassifications, tags: storedTags },
           { status: 201, headers: corsHeaders }
         );
       } catch (error) {

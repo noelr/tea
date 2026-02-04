@@ -148,6 +148,67 @@
       color: #e65100;
     }
 
+    .tags-section {
+      margin-bottom: 15px;
+    }
+
+    .tags-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .tag {
+      display: inline-block;
+      padding: 4px 10px;
+      background: #e8f5e9;
+      color: #2e7d32;
+      border-radius: 12px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .tag:hover {
+      background: #c8e6c9;
+    }
+
+    .filter-bar {
+      background: white;
+      padding: 15px 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+      display: none;
+    }
+
+    .filter-bar.active {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .filter-bar .filter-tag {
+      background: #2e7d32;
+      color: white;
+      padding: 6px 12px;
+      border-radius: 16px;
+      font-size: 14px;
+    }
+
+    .filter-bar .clear-filter {
+      background: none;
+      border: none;
+      color: #999;
+      cursor: pointer;
+      font-size: 18px;
+      padding: 0 5px;
+    }
+
+    .filter-bar .clear-filter:hover {
+      color: #333;
+    }
+
     .empty-state {
       text-align: center;
       color: #999;
@@ -187,6 +248,12 @@
       <button id="captureBtn" onclick="captureThought()">Capture Thought</button>
     </div>
 
+    <div id="filterBar" class="filter-bar">
+      <span>Filtering by:</span>
+      <span id="filterTagName" class="filter-tag"></span>
+      <button class="clear-filter" onclick="clearFilter()">&times;</button>
+    </div>
+
     <div id="thoughtsContainer">
       <div class="loading"><span class="spinner"></span>Loading thoughts...</div>
     </div>
@@ -194,6 +261,7 @@
 
   <script>
     const API_URL = '/api/thoughts';
+    let currentFilter = null;
 
     async function loadThoughts() {
       try {
@@ -205,6 +273,42 @@
         document.getElementById('thoughtsContainer').innerHTML =
           '<div class="empty-state">Failed to load thoughts</div>';
       }
+    }
+
+    async function filterByTag(tagName) {
+      currentFilter = tagName;
+      document.getElementById('filterBar').classList.add('active');
+      document.getElementById('filterTagName').textContent = tagName;
+
+      try {
+        const response = await fetch(`/api/tags/${encodeURIComponent(tagName)}`);
+        const thoughts = await response.json();
+        renderFilteredThoughts(thoughts, tagName);
+      } catch (error) {
+        console.error('Failed to filter by tag:', error);
+      }
+    }
+
+    function clearFilter() {
+      currentFilter = null;
+      document.getElementById('filterBar').classList.remove('active');
+      loadThoughts();
+    }
+
+    function renderFilteredThoughts(thoughts, tagName) {
+      const container = document.getElementById('thoughtsContainer');
+
+      if (thoughts.length === 0) {
+        container.innerHTML = `<div class="empty-state">No thoughts found with tag "${tagName}"</div>`;
+        return;
+      }
+
+      container.innerHTML = `
+        <div class="time-group">
+          <h2>Thoughts tagged "${tagName}"</h2>
+          ${thoughts.map(renderThoughtCard).join('')}
+        </div>
+      `;
     }
 
     function renderThoughts(grouped) {
@@ -242,6 +346,7 @@
     function renderThoughtCard(thought) {
       const events = thought.classifications.filter(c => c.type === 'event');
       const actions = thought.classifications.filter(c => c.type === 'action');
+      const tags = thought.tags || [];
 
       const time = new Date(thought.created_at + 'Z').toLocaleString();
 
@@ -249,6 +354,13 @@
         <div class="thought-card">
           <div class="thought-content">${escapeHtml(thought.content)}</div>
           <div class="thought-time">${time}</div>
+          ${tags.length > 0 ? `
+            <div class="tags-section">
+              <div class="tags-container">
+                ${tags.map(t => `<span class="tag" onclick="filterByTag('${escapeHtml(t.name)}')">${escapeHtml(t.name)}</span>`).join('')}
+              </div>
+            </div>
+          ` : ''}
           <div class="classifications">
             ${events.length > 0 ? `
               <div class="classification-group events">

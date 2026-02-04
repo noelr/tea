@@ -5,6 +5,7 @@ const client = new Anthropic();
 export interface ClassificationResult {
   events: string[];
   actions: string[];
+  entities: string[];
 }
 
 export async function classifyThought(thought: string): Promise<ClassificationResult> {
@@ -14,15 +15,17 @@ export async function classifyThought(thought: string): Promise<ClassificationRe
     messages: [
       {
         role: "user",
-        content: `Analyze the following thought/note and extract events and actions from it.
+        content: `Analyze the following thought/note and extract events, actions, and entities from it.
 
 - **Events**: Things that happened or are happening (e.g., "Brigitte called", "meeting was held")
 - **Actions**: Tasks with a clear, measurable outcome (e.g., "create a new export for EDAVis", "send report to client"). Only include actions that have a concrete deliverable or verifiable completion state. Do NOT include vague intentions or ideas.
+- **Entities**: People, projects, tools, companies, or other named things mentioned (e.g., "Brigitte", "EDAVis", "Acme Corp"). Use short, normalized names suitable as tags.
 
 Respond in JSON format only, with no additional text:
 {
   "events": ["description of event 1", "description of event 2"],
-  "actions": ["description of action 1", "description of action 2"]
+  "actions": ["description of action 1", "description of action 2"],
+  "entities": ["entity1", "entity2"]
 }
 
 If a category has no items, use an empty array.
@@ -45,9 +48,10 @@ Thought to analyze:
     return {
       events: result.events || [],
       actions: result.actions || [],
+      entities: result.entities || [],
     };
   } catch (error) {
     console.error("Failed to parse classification response:", responseText);
-    return { events: [], actions: [] };
+    return { events: [], actions: [], entities: [] };
   }
 }

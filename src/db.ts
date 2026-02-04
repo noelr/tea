@@ -21,6 +21,17 @@ db.run(`
   )
 `);
 
+db.run(`
+  CREATE TABLE IF NOT EXISTS tags (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    thought_id INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    FOREIGN KEY (thought_id) REFERENCES thoughts(id) ON DELETE CASCADE
+  )
+`);
+
+db.run(`CREATE INDEX IF NOT EXISTS idx_tags_name ON tags(name)`);
+
 export interface Thought {
   id: number;
   content: string;
@@ -34,8 +45,15 @@ export interface Classification {
   description: string;
 }
 
+export interface Tag {
+  id: number;
+  thought_id: number;
+  name: string;
+}
+
 export interface ThoughtWithClassifications extends Thought {
   classifications: Classification[];
+  tags: Tag[];
 }
 
 export function createThought(content: string): Thought {
@@ -54,6 +72,13 @@ export function addClassification(
   return stmt.get(thoughtId, type, description) as Classification;
 }
 
+export function addTag(thoughtId: number, name: string): Tag {
+  const stmt = db.prepare(
+    "INSERT INTO tags (thought_id, name) VALUES (?, ?) RETURNING *"
+  );
+  return stmt.get(thoughtId, name) as Tag;
+}
+
 export function getAllThoughts(): ThoughtWithClassifications[] {
   const thoughts = db.prepare("SELECT * FROM thoughts ORDER BY created_at DESC").all() as Thought[];
 
@@ -61,7 +86,10 @@ export function getAllThoughts(): ThoughtWithClassifications[] {
     const classifications = db
       .prepare("SELECT * FROM classifications WHERE thought_id = ?")
       .all(thought.id) as Classification[];
-    return { ...thought, classifications };
+    const tags = db
+      .prepare("SELECT * FROM tags WHERE thought_id = ?")
+      .all(thought.id) as Tag[];
+    return { ...thought, classifications, tags };
   });
 }
 
@@ -72,8 +100,26 @@ export function getThoughtById(id: number): ThoughtWithClassifications | null {
   const classifications = db
     .prepare("SELECT * FROM classifications WHERE thought_id = ?")
     .all(id) as Classification[];
+  const tags = db
+    .prepare("SELECT * FROM tags WHERE thought_id = ?")
+    .all(id) as Tag[];
 
-  return { ...thought, classifications };
+  return { ...thought, classifications, tags };
+}
+
+export function getAllTags(): string[] {
+  const result = db
+    .prepare("SELECT DISTINCT name FROM tags ORDER BY name")
+    .all() as { name: string }[];
+  return result.map((r) => r.name);
+}
+
+export function getThoughtsByTag(tagName: string): ThoughtWithClassifications[] {
+  const thoughtIds = db
+    .prepare("SELECT DISTINCT thought_id FROM tags WHERE name = ?")
+    .all(tagName) as { thought_id: number }[];
+
+  return thoughtIds.map((row) => getThoughtById(row.thought_id)!).filter(Boolean);
 }
 
 export default db;
