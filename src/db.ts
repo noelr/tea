@@ -7,9 +7,17 @@ db.run(`
   CREATE TABLE IF NOT EXISTS thoughts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     content TEXT NOT NULL,
+    reviewed INTEGER DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )
 `);
+
+// Add reviewed column if it doesn't exist (migration for existing DBs)
+try {
+  db.run(`ALTER TABLE thoughts ADD COLUMN reviewed INTEGER DEFAULT 0`);
+} catch (e) {
+  // Column already exists
+}
 
 db.run(`
   CREATE TABLE IF NOT EXISTS classifications (
@@ -35,6 +43,7 @@ db.run(`CREATE INDEX IF NOT EXISTS idx_tags_name ON tags(name)`);
 export interface Thought {
   id: number;
   content: string;
+  reviewed: number;
   created_at: string;
 }
 
@@ -56,9 +65,38 @@ export interface ThoughtWithClassifications extends Thought {
   tags: Tag[];
 }
 
+// Create a new thought entry (just stores, no processing)
 export function createThought(content: string): Thought {
-  const stmt = db.prepare("INSERT INTO thoughts (content) VALUES (?) RETURNING *");
+  const stmt = db.prepare("INSERT INTO thoughts (content, reviewed) VALUES (?, 0) RETURNING *");
   return stmt.get(content) as Thought;
+}
+
+// Get all unreviewed thoughts
+export function getUnreviewedThoughts(): Thought[] {
+  return db.prepare("SELECT * FROM thoughts WHERE reviewed = 0 ORDER BY created_at ASC").all() as Thought[];
+}
+
+// Mark thoughts as reviewed
+export function markThoughtsReviewed(thoughtIds: number[]): void {
+  const stmt = db.prepare("UPDATE thoughts SET reviewed = 1 WHERE id = ?");
+  for (const id of thoughtIds) {
+    stmt.run(id);
+  }
+}
+
+// Get reviewed thoughts (with classifications)
+export function getReviewedThoughts(): ThoughtWithClassifications[] {
+  const thoughts = db.prepare("SELECT * FROM thoughts WHERE reviewed = 1 ORDER BY created_at DESC").all() as Thought[];
+
+  return thoughts.map((thought) => {
+    const classifications = db
+      .prepare("SELECT * FROM classifications WHERE thought_id = ?")
+      .all(thought.id) as Classification[];
+    const tags = db
+      .prepare("SELECT * FROM tags WHERE thought_id = ?")
+      .all(thought.id) as Tag[];
+    return { ...thought, classifications, tags };
+  });
 }
 
 export function addClassification(

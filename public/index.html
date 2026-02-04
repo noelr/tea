@@ -34,7 +34,7 @@
       padding: 20px;
       border-radius: 12px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      margin-bottom: 30px;
+      margin-bottom: 20px;
     }
 
     .input-section textarea {
@@ -53,11 +53,14 @@
       border-color: #007bff;
     }
 
-    .input-section button {
+    .button-row {
+      display: flex;
+      gap: 10px;
       margin-top: 15px;
-      padding: 12px 30px;
-      background: #007bff;
-      color: white;
+    }
+
+    .btn {
+      padding: 12px 24px;
       border: none;
       border-radius: 8px;
       font-size: 16px;
@@ -65,15 +68,195 @@
       transition: background 0.2s;
     }
 
-    .input-section button:hover {
+    .btn-primary {
+      background: #007bff;
+      color: white;
+    }
+
+    .btn-primary:hover {
       background: #0056b3;
     }
 
-    .input-section button:disabled {
+    .btn-success {
+      background: #28a745;
+      color: white;
+    }
+
+    .btn-success:hover {
+      background: #1e7e34;
+    }
+
+    .btn-danger {
+      background: #dc3545;
+      color: white;
+    }
+
+    .btn-danger:hover {
+      background: #c82333;
+    }
+
+    .btn:disabled {
       background: #ccc;
       cursor: not-allowed;
     }
 
+    .badge {
+      background: #dc3545;
+      color: white;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+      margin-left: 8px;
+    }
+
+    /* Review Mode */
+    .review-section {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+      display: none;
+    }
+
+    .review-section.active {
+      display: block;
+    }
+
+    .review-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 2px solid #e0e0e0;
+    }
+
+    .review-header h2 {
+      color: #333;
+    }
+
+    .review-entries {
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .review-entry {
+      padding: 8px 0;
+      border-bottom: 1px solid #e0e0e0;
+      font-size: 14px;
+    }
+
+    .review-entry:last-child {
+      border-bottom: none;
+    }
+
+    .review-entry .entry-time {
+      color: #999;
+      font-size: 12px;
+    }
+
+    .review-summary {
+      background: #e3f2fd;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+
+    .review-summary h3 {
+      color: #1565c0;
+      margin-bottom: 10px;
+    }
+
+    .review-results {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .result-section {
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 8px;
+    }
+
+    .result-section h4 {
+      margin-bottom: 10px;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .result-section.events h4 { color: #9c27b0; }
+    .result-section.actions h4 { color: #f57c00; }
+    .result-section.entities h4 { color: #2e7d32; }
+
+    .result-item {
+      padding: 6px 10px;
+      margin-bottom: 5px;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+
+    .result-section.events .result-item { background: #f3e5f5; color: #7b1fa2; }
+    .result-section.actions .result-item { background: #fff3e0; color: #e65100; }
+    .result-section.entities .result-item { background: #e8f5e9; color: #2e7d32; }
+
+    .entities-section {
+      grid-column: 1 / -1;
+    }
+
+    .entity-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .entity-tag {
+      padding: 4px 12px;
+      background: #e8f5e9;
+      color: #2e7d32;
+      border-radius: 12px;
+      font-size: 13px;
+    }
+
+    /* Chat Interface */
+    .chat-section {
+      border-top: 2px solid #e0e0e0;
+      padding-top: 20px;
+      margin-top: 20px;
+    }
+
+    .chat-input {
+      display: flex;
+      gap: 10px;
+    }
+
+    .chat-input input {
+      flex: 1;
+      padding: 12px 15px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+
+    .chat-input input:focus {
+      outline: none;
+      border-color: #007bff;
+    }
+
+    .review-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    /* Time Groups */
     .time-group {
       margin-bottom: 25px;
     }
@@ -107,47 +290,6 @@
       margin-bottom: 15px;
     }
 
-    .classifications {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-
-    .classification-group {
-      flex: 1;
-      min-width: 150px;
-    }
-
-    .classification-group h4 {
-      font-size: 12px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-bottom: 8px;
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
-
-    .classification-group.events h4 { color: #9c27b0; }
-    .classification-group.actions h4 { color: #f57c00; }
-
-    .classification-item {
-      font-size: 14px;
-      padding: 8px 12px;
-      border-radius: 6px;
-      margin-bottom: 5px;
-    }
-
-    .classification-group.events .classification-item {
-      background: #f3e5f5;
-      color: #7b1fa2;
-    }
-
-    .classification-group.actions .classification-item {
-      background: #fff3e0;
-      color: #e65100;
-    }
-
     .tags-section {
       margin-bottom: 15px;
     }
@@ -171,6 +313,44 @@
 
     .tag:hover {
       background: #c8e6c9;
+    }
+
+    .classifications {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .classification-group {
+      flex: 1;
+      min-width: 150px;
+    }
+
+    .classification-group h4 {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+
+    .classification-group.events h4 { color: #9c27b0; }
+    .classification-group.actions h4 { color: #f57c00; }
+
+    .classification-item {
+      font-size: 14px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      margin-bottom: 5px;
+    }
+
+    .classification-group.events .classification-item {
+      background: #f3e5f5;
+      color: #7b1fa2;
+    }
+
+    .classification-group.actions .classification-item {
+      background: #fff3e0;
+      color: #e65100;
     }
 
     .filter-bar {
@@ -202,11 +382,6 @@
       color: #999;
       cursor: pointer;
       font-size: 18px;
-      padding: 0 5px;
-    }
-
-    .filter-bar .clear-filter:hover {
-      color: #333;
     }
 
     .empty-state {
@@ -244,8 +419,53 @@
     <h1>Thought Capture</h1>
 
     <div class="input-section">
-      <textarea id="thoughtInput" placeholder="Enter your thought... (e.g., 'Brigitte called, we need to create a new export for EDAVis')"></textarea>
-      <button id="captureBtn" onclick="captureThought()">Capture Thought</button>
+      <textarea id="thoughtInput" placeholder="Enter your thought..."></textarea>
+      <div class="button-row">
+        <button id="captureBtn" class="btn btn-primary" onclick="captureThought()">Capture</button>
+        <button id="reviewBtn" class="btn btn-success" onclick="startReview()">
+          Review<span id="unreviewedBadge" class="badge" style="display:none">0</span>
+        </button>
+      </div>
+    </div>
+
+    <div id="reviewSection" class="review-section">
+      <div class="review-header">
+        <h2>Review Entries</h2>
+        <button class="btn btn-danger" onclick="cancelReview()">Cancel</button>
+      </div>
+
+      <div id="reviewEntries" class="review-entries"></div>
+
+      <div id="reviewSummary" class="review-summary">
+        <h3>Summary</h3>
+        <p id="summaryText"></p>
+      </div>
+
+      <div class="review-results">
+        <div class="result-section events">
+          <h4>📅 Events</h4>
+          <div id="reviewEvents"></div>
+        </div>
+        <div class="result-section actions">
+          <h4>✅ Actions</h4>
+          <div id="reviewActions"></div>
+        </div>
+        <div class="result-section entities entities-section">
+          <h4>🏷️ Entities</h4>
+          <div id="reviewEntities" class="entity-tags"></div>
+        </div>
+      </div>
+
+      <div class="chat-section">
+        <div class="chat-input">
+          <input type="text" id="chatInput" placeholder="Ask to modify the review... (e.g., 'rename entity X to Y', 'remove the first action')">
+          <button class="btn btn-primary" onclick="sendChat()">Send</button>
+        </div>
+      </div>
+
+      <div class="review-actions">
+        <button class="btn btn-success" onclick="commitReview()">Commit Review</button>
+      </div>
     </div>
 
     <div id="filterBar" class="filter-bar">
@@ -255,17 +475,17 @@
     </div>
 
     <div id="thoughtsContainer">
-      <div class="loading"><span class="spinner"></span>Loading thoughts...</div>
+      <div class="loading"><span class="spinner"></span>Loading...</div>
     </div>
   </div>
 
   <script>
-    const API_URL = '/api/thoughts';
     let currentFilter = null;
+    let isReviewing = false;
 
     async function loadThoughts() {
       try {
-        const response = await fetch(API_URL);
+        const response = await fetch('/api/thoughts');
         const grouped = await response.json();
         renderThoughts(grouped);
       } catch (error) {
@@ -273,6 +493,174 @@
         document.getElementById('thoughtsContainer').innerHTML =
           '<div class="empty-state">Failed to load thoughts</div>';
       }
+    }
+
+    async function loadUnreviewedCount() {
+      try {
+        const response = await fetch('/api/unreviewed');
+        const data = await response.json();
+        const badge = document.getElementById('unreviewedBadge');
+        if (data.count > 0) {
+          badge.textContent = data.count;
+          badge.style.display = 'inline';
+        } else {
+          badge.style.display = 'none';
+        }
+      } catch (error) {
+        console.error('Failed to load unreviewed count:', error);
+      }
+    }
+
+    async function captureThought() {
+      const input = document.getElementById('thoughtInput');
+      const btn = document.getElementById('captureBtn');
+      const content = input.value.trim();
+
+      if (!content) {
+        alert('Please enter a thought');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Saving...';
+
+      try {
+        const response = await fetch('/api/thoughts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content })
+        });
+
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error || 'Failed to capture thought');
+        }
+
+        input.value = '';
+        await loadUnreviewedCount();
+      } catch (error) {
+        console.error('Failed to capture thought:', error);
+        alert(error.message || 'Failed to capture thought.');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Capture';
+      }
+    }
+
+    async function startReview() {
+      const reviewBtn = document.getElementById('reviewBtn');
+      reviewBtn.disabled = true;
+      reviewBtn.textContent = 'Loading...';
+
+      try {
+        const response = await fetch('/api/review/start', { method: 'POST' });
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to start review');
+        }
+
+        isReviewing = true;
+        document.getElementById('reviewSection').classList.add('active');
+
+        // Show entries being reviewed
+        const entriesHtml = data.thoughts.map(t => `
+          <div class="review-entry">
+            <div>${escapeHtml(t.content)}</div>
+            <div class="entry-time">${new Date(t.created_at + 'Z').toLocaleString()}</div>
+          </div>
+        `).join('');
+        document.getElementById('reviewEntries').innerHTML = entriesHtml;
+
+        renderReview(data.review);
+      } catch (error) {
+        console.error('Failed to start review:', error);
+        alert(error.message || 'Failed to start review.');
+      } finally {
+        reviewBtn.disabled = false;
+        reviewBtn.textContent = 'Review';
+        loadUnreviewedCount();
+      }
+    }
+
+    function renderReview(review) {
+      document.getElementById('summaryText').textContent = review.summary;
+
+      document.getElementById('reviewEvents').innerHTML = review.events.length > 0
+        ? review.events.map(e => `<div class="result-item">${escapeHtml(e.description)}</div>`).join('')
+        : '<div class="result-item" style="color:#999">No events</div>';
+
+      document.getElementById('reviewActions').innerHTML = review.actions.length > 0
+        ? review.actions.map(a => `<div class="result-item">${escapeHtml(a.description)}</div>`).join('')
+        : '<div class="result-item" style="color:#999">No actions</div>';
+
+      document.getElementById('reviewEntities').innerHTML = review.entities.length > 0
+        ? review.entities.map(e => `<span class="entity-tag">${escapeHtml(e)}</span>`).join('')
+        : '<span style="color:#999">No entities</span>';
+    }
+
+    async function sendChat() {
+      const input = document.getElementById('chatInput');
+      const message = input.value.trim();
+
+      if (!message) return;
+
+      input.disabled = true;
+
+      try {
+        const response = await fetch('/api/review/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Chat failed');
+        }
+
+        input.value = '';
+        renderReview(data.review);
+      } catch (error) {
+        console.error('Chat failed:', error);
+        alert(error.message || 'Chat failed.');
+      } finally {
+        input.disabled = false;
+        input.focus();
+      }
+    }
+
+    async function commitReview() {
+      if (!confirm('Commit this review? This will save the events, actions, and tags.')) {
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/review/commit', { method: 'POST' });
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to commit');
+        }
+
+        isReviewing = false;
+        document.getElementById('reviewSection').classList.remove('active');
+        await loadThoughts();
+        await loadUnreviewedCount();
+      } catch (error) {
+        console.error('Commit failed:', error);
+        alert(error.message || 'Failed to commit review.');
+      }
+    }
+
+    async function cancelReview() {
+      try {
+        await fetch('/api/review/cancel', { method: 'POST' });
+      } catch (e) {}
+
+      isReviewing = false;
+      document.getElementById('reviewSection').classList.remove('active');
     }
 
     async function filterByTag(tagName) {
@@ -299,13 +687,13 @@
       const container = document.getElementById('thoughtsContainer');
 
       if (thoughts.length === 0) {
-        container.innerHTML = `<div class="empty-state">No thoughts found with tag "${tagName}"</div>`;
+        container.innerHTML = `<div class="empty-state">No thoughts found with tag "${escapeHtml(tagName)}"</div>`;
         return;
       }
 
       container.innerHTML = `
         <div class="time-group">
-          <h2>Thoughts tagged "${tagName}"</h2>
+          <h2>Thoughts tagged "${escapeHtml(tagName)}"</h2>
           ${thoughts.map(renderThoughtCard).join('')}
         </div>
       `;
@@ -337,7 +725,7 @@
       }
 
       if (!hasAnyThoughts) {
-        html = '<div class="empty-state">No thoughts captured yet. Start by entering a thought above!</div>';
+        html = '<div class="empty-state">No reviewed thoughts yet. Capture some thoughts and review them!</div>';
       }
 
       container.innerHTML = html;
@@ -385,52 +773,22 @@
       return div.innerHTML;
     }
 
-    async function captureThought() {
-      const input = document.getElementById('thoughtInput');
-      const btn = document.getElementById('captureBtn');
-      const content = input.value.trim();
-
-      if (!content) {
-        alert('Please enter a thought');
-        return;
-      }
-
-      btn.disabled = true;
-      btn.textContent = 'Analyzing...';
-
-      try {
-        const response = await fetch(API_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ content })
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.error || 'Failed to capture thought');
-        }
-
-        input.value = '';
-        await loadThoughts();
-      } catch (error) {
-        console.error('Failed to capture thought:', error);
-        alert(error.message || 'Failed to capture thought. Please try again.');
-      } finally {
-        btn.disabled = false;
-        btn.textContent = 'Capture Thought';
-      }
-    }
-
-    // Allow Ctrl+Enter to submit
+    // Keyboard shortcuts
     document.getElementById('thoughtInput').addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
         captureThought();
       }
     });
 
-    // Load thoughts on page load
+    document.getElementById('chatInput').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        sendChat();
+      }
+    });
+
+    // Initialize
     loadThoughts();
+    loadUnreviewedCount();
   </script>
 </body>
 </html>
