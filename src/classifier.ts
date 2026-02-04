@@ -7,6 +7,7 @@ export interface ReviewResult {
   events: Array<{ description: string; thoughtIds: number[] }>;
   actions: Array<{ description: string; thoughtIds: number[] }>;
   entities: string[];
+  message?: string; // For conversational responses that don't modify the review
 }
 
 export interface ClassifierContext {
@@ -26,6 +27,7 @@ let currentReviewData: {
   thoughts: ThoughtEntry[];
   context: ClassifierContext;
 } | null = null;
+let lastValidResult: ReviewResult | null = null;
 
 export function startReview(thoughts: ThoughtEntry[], context: ClassifierContext): void {
   currentReviewData = { thoughts, context };
@@ -35,6 +37,7 @@ export function startReview(thoughts: ThoughtEntry[], context: ClassifierContext
 export function clearReview(): void {
   currentReviewData = null;
   conversationHistory = [];
+  lastValidResult = null;
 }
 
 export async function processReview(): Promise<ReviewResult> {
@@ -93,7 +96,9 @@ The thoughtIds should reference the IDs provided in the input.`;
     if (!jsonMatch) {
       throw new Error("No JSON found in response");
     }
-    return JSON.parse(jsonMatch[0]) as ReviewResult;
+    const result = JSON.parse(jsonMatch[0]) as ReviewResult;
+    lastValidResult = result;
+    return result;
   } catch (error) {
     console.error("Failed to parse review response:", responseText);
     return {
@@ -127,13 +132,23 @@ The user may ask you to:
 - Rename entities
 - Change categorizations
 - Clarify relationships
+- Ask questions about the entries (e.g., "how long did I work on X?")
 
-Always respond with the updated JSON in this format:
+If the user asks you to MODIFY the review (add/remove/rename), respond with the updated JSON:
 {
   "summary": "Brief summary of the entries",
   "events": [{"description": "event description", "thoughtIds": [1, 2]}],
   "actions": [{"description": "action with measurable outcome", "thoughtIds": [3]}],
   "entities": ["Entity1", "Entity2"]
+}
+
+If the user asks a QUESTION that doesn't require changing the review, respond with JSON that includes a "message" field:
+{
+  "message": "Your answer to their question here",
+  "summary": "...(keep the current summary)...",
+  "events": [...(keep current events)...],
+  "actions": [...(keep current actions)...],
+  "entities": [...(keep current entities)...]
 }`;
 
   conversationHistory.push({ role: "user", content: userMessage });
@@ -151,10 +166,20 @@ Always respond with the updated JSON in this format:
   try {
     const jsonMatch = responseText.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
+      // No JSON - return last valid result with the response as a message
+      if (lastValidResult) {
+        return { ...lastValidResult, message: responseText };
+      }
       throw new Error("No JSON found in response");
     }
-    return JSON.parse(jsonMatch[0]) as ReviewResult;
+    const result = JSON.parse(jsonMatch[0]) as ReviewResult;
+    lastValidResult = result;
+    return result;
   } catch (error) {
+    // If parsing fails but we have a last valid result, return it with the message
+    if (lastValidResult) {
+      return { ...lastValidResult, message: responseText };
+    }
     console.error("Failed to parse chat response:", responseText);
     throw new Error("Failed to parse response. Please try again.");
   }

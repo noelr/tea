@@ -23,6 +23,7 @@ import {
 
 // Group thoughts by time period
 interface GroupedThoughts {
+  new: Thought[];
   today: ThoughtWithClassifications[];
   yesterday: ThoughtWithClassifications[];
   thisWeek: ThoughtWithClassifications[];
@@ -97,17 +98,13 @@ const server = Bun.serve({
       });
     }
 
-    // API: Get reviewed thoughts grouped by time
+    // API: Get all thoughts grouped by time (with unreviewed in "new")
     if (url.pathname === "/api/thoughts" && req.method === "GET") {
-      const thoughts = getReviewedThoughts();
-      const grouped = groupThoughtsByTime(thoughts);
-      return Response.json(grouped, { headers: corsHeaders });
-    }
-
-    // API: Get unreviewed entries count
-    if (url.pathname === "/api/unreviewed" && req.method === "GET") {
+      const reviewed = getReviewedThoughts();
       const unreviewed = getUnreviewedThoughts();
-      return Response.json({ count: unreviewed.length, entries: unreviewed }, { headers: corsHeaders });
+      const grouped = groupThoughtsByTime(reviewed);
+      grouped.new = unreviewed;
+      return Response.json(grouped, { headers: corsHeaders });
     }
 
     // API: Create a new thought entry (just stores, no AI)
