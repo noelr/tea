@@ -5,441 +5,150 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Thought Capture</title>
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       background: #f5f5f5;
       min-height: 100vh;
-      padding: 20px;
-    }
-
-    .container {
-      max-width: 800px;
-      margin: 0 auto;
-    }
-
-    h1 {
-      text-align: center;
-      color: #333;
-      margin-bottom: 30px;
-    }
-
-    .input-section {
-      background: white;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      margin-bottom: 20px;
-    }
-
-    .input-section input[type="text"] {
-      width: 100%;
       padding: 15px;
-      border: 2px solid #e0e0e0;
-      border-radius: 8px;
-      font-size: 16px;
-      font-family: inherit;
     }
+    .container { max-width: 1000px; margin: 0 auto; }
+    h1 { color: #333; margin-bottom: 15px; font-size: 20px; }
 
-    .input-section input[type="text"]:focus {
-      outline: none;
-      border-color: #007bff;
-    }
-
-    .button-row {
+    .input-row {
       display: flex;
-      gap: 10px;
-      margin-top: 15px;
+      gap: 8px;
+      margin-bottom: 15px;
     }
-
-    .btn {
-      padding: 12px 24px;
-      border: none;
-      border-radius: 8px;
-      font-size: 16px;
-      cursor: pointer;
-      transition: background 0.2s;
+    .input-row input {
+      flex: 1;
+      padding: 10px 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
     }
-
-    .btn-primary {
+    .input-row input:focus { outline: none; border-color: #007bff; }
+    .input-row button {
+      padding: 10px 16px;
       background: #007bff;
       color: white;
-    }
-
-    .btn-primary:hover {
-      background: #0056b3;
-    }
-
-    .btn-success {
-      background: #28a745;
-      color: white;
-    }
-
-    .btn-success:hover {
-      background: #1e7e34;
-    }
-
-    .btn-danger {
-      background: #dc3545;
-      color: white;
-    }
-
-    .btn-danger:hover {
-      background: #c82333;
-    }
-
-    .btn:disabled {
-      background: #ccc;
-      cursor: not-allowed;
-    }
-
-    .badge {
-      background: #dc3545;
-      color: white;
-      padding: 2px 8px;
-      border-radius: 12px;
-      font-size: 12px;
-      margin-left: 8px;
-    }
-
-    /* Review Mode */
-    .review-section {
-      background: white;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      margin-bottom: 20px;
-      display: none;
-    }
-
-    .review-section.active {
-      display: block;
-    }
-
-    .review-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-      padding-bottom: 15px;
-      border-bottom: 2px solid #e0e0e0;
-    }
-
-    .review-header h2 {
-      color: #333;
-    }
-
-    .review-entries {
-      background: #f8f9fa;
-      padding: 15px;
-      border-radius: 8px;
-      margin-bottom: 20px;
-      max-height: 200px;
-      overflow-y: auto;
-    }
-
-    .review-entry {
-      padding: 8px 0;
-      border-bottom: 1px solid #e0e0e0;
-      font-size: 14px;
-    }
-
-    .review-entry:last-child {
-      border-bottom: none;
-    }
-
-    .review-entry .entry-time {
-      color: #999;
-      font-size: 12px;
-    }
-
-    .review-summary {
-      background: #e3f2fd;
-      padding: 15px;
-      border-radius: 8px;
-      margin-bottom: 20px;
-    }
-
-    .review-summary h3 {
-      color: #1565c0;
-      margin-bottom: 10px;
-    }
-
-    .review-results {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 15px;
-      margin-bottom: 20px;
-    }
-
-    .result-section {
-      background: #f8f9fa;
-      padding: 15px;
-      border-radius: 8px;
-    }
-
-    .result-section h4 {
-      margin-bottom: 10px;
-      font-size: 14px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .result-section.events h4 { color: #9c27b0; }
-    .result-section.actions h4 { color: #f57c00; }
-    .result-section.entities h4 { color: #2e7d32; }
-
-    .result-item {
-      padding: 6px 10px;
-      margin-bottom: 5px;
-      border-radius: 4px;
-      font-size: 14px;
-    }
-
-    .result-section.events .result-item { background: #f3e5f5; color: #7b1fa2; }
-    .result-section.actions .result-item { background: #fff3e0; color: #e65100; }
-    .result-section.entities .result-item { background: #e8f5e9; color: #2e7d32; }
-
-    .entities-section {
-      grid-column: 1 / -1;
-    }
-
-    .entity-tags {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-
-    .entity-tag {
-      padding: 4px 12px;
-      background: #e8f5e9;
-      color: #2e7d32;
-      border-radius: 12px;
-      font-size: 13px;
-    }
-
-    /* Chat Interface */
-    .chat-section {
-      border-top: 2px solid #e0e0e0;
-      padding-top: 20px;
-      margin-top: 20px;
-    }
-
-    .chat-message {
-      background: #fff3cd;
-      border: 1px solid #ffc107;
-      color: #856404;
-      padding: 12px 15px;
-      border-radius: 8px;
-      margin-bottom: 15px;
-      white-space: pre-wrap;
-    }
-
-    .chat-input {
-      display: flex;
-      gap: 10px;
-    }
-
-    .chat-input input {
-      flex: 1;
-      padding: 12px 15px;
-      border: 2px solid #e0e0e0;
-      border-radius: 8px;
-      font-size: 14px;
-    }
-
-    .chat-input input:focus {
-      outline: none;
-      border-color: #007bff;
-    }
-
-    .review-actions {
-      display: flex;
-      gap: 10px;
-      margin-top: 20px;
-    }
-
-    /* Time Groups */
-    .time-group {
-      margin-bottom: 25px;
-    }
-
-    .time-group h2 {
-      color: #555;
-      font-size: 18px;
-      margin-bottom: 15px;
-      padding-bottom: 8px;
-      border-bottom: 2px solid #e0e0e0;
-    }
-
-    .time-group.new-entries h2 {
-      color: #007bff;
-      border-bottom-color: #007bff;
-    }
-
-    .new-entry-card {
-      background: #f8f9fa;
-      border: 2px dashed #dee2e6;
-      padding: 15px 20px;
-      border-radius: 12px;
-      margin-bottom: 10px;
-    }
-
-    .new-entry-card .thought-content {
-      margin-bottom: 5px;
-    }
-
-    .new-entry-card .thought-time {
-      margin-bottom: 0;
-    }
-
-    .thought-card {
-      background: white;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      margin-bottom: 15px;
-    }
-
-    .thought-content {
-      font-size: 16px;
-      color: #333;
-      margin-bottom: 15px;
-      line-height: 1.5;
-    }
-
-    .thought-time {
-      font-size: 12px;
-      color: #999;
-      margin-bottom: 15px;
-    }
-
-    .tags-section {
-      margin-bottom: 15px;
-    }
-
-    .tags-container {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-    }
-
-    .tag {
-      display: inline-block;
-      padding: 4px 10px;
-      background: #e8f5e9;
-      color: #2e7d32;
-      border-radius: 12px;
-      font-size: 12px;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-
-    .tag:hover {
-      background: #c8e6c9;
-    }
-
-    .classifications {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-
-    .classification-group {
-      flex: 1;
-      min-width: 150px;
-    }
-
-    .classification-group h4 {
-      font-size: 12px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-bottom: 8px;
-    }
-
-    .classification-group.events h4 { color: #9c27b0; }
-    .classification-group.actions h4 { color: #f57c00; }
-
-    .classification-item {
-      font-size: 14px;
-      padding: 8px 12px;
+      border: none;
       border-radius: 6px;
-      margin-bottom: 5px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .input-row button:hover { background: #0056b3; }
+    .input-row button:disabled { background: #ccc; }
+
+    .main-content {
+      display: grid;
+      grid-template-columns: 1fr 200px;
+      gap: 15px;
     }
 
-    .classification-group.events .classification-item {
-      background: #f3e5f5;
-      color: #7b1fa2;
+    .entries { }
+    .time-group { margin-bottom: 12px; }
+    .time-group h3 {
+      font-size: 11px;
+      text-transform: uppercase;
+      color: #888;
+      margin-bottom: 6px;
+      letter-spacing: 0.5px;
     }
 
-    .classification-group.actions .classification-item {
-      background: #fff3e0;
-      color: #e65100;
+    .entry {
+      background: white;
+      padding: 10px 12px;
+      border-radius: 6px;
+      margin-bottom: 6px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
     }
+    .entry-content { font-size: 13px; color: #333; margin-bottom: 4px; }
+    .entry-meta {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .entry-time { font-size: 10px; color: #999; }
+    .entry-tags { display: flex; gap: 4px; flex-wrap: wrap; }
+    .entry-tag {
+      font-size: 10px;
+      padding: 2px 6px;
+      background: #e8f5e9;
+      color: #2e7d32;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .entry-tag:hover { background: #c8e6c9; }
+    .entry-classifications {
+      display: flex;
+      gap: 8px;
+      margin-top: 6px;
+      flex-wrap: wrap;
+    }
+    .entry-event, .entry-action {
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 4px;
+    }
+    .entry-event { background: #f3e5f5; color: #7b1fa2; }
+    .entry-action { background: #fff3e0; color: #e65100; }
+
+    .sidebar {
+      background: white;
+      padding: 12px;
+      border-radius: 6px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      height: fit-content;
+      position: sticky;
+      top: 15px;
+    }
+    .sidebar h3 {
+      font-size: 11px;
+      text-transform: uppercase;
+      color: #888;
+      margin-bottom: 8px;
+      letter-spacing: 0.5px;
+    }
+    .tag-list { display: flex; flex-wrap: wrap; gap: 4px; }
+    .sidebar-tag {
+      font-size: 11px;
+      padding: 4px 8px;
+      background: #f5f5f5;
+      color: #555;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .sidebar-tag:hover { background: #e8f5e9; color: #2e7d32; }
+    .sidebar-tag.active { background: #2e7d32; color: white; }
 
     .filter-bar {
-      background: white;
-      padding: 15px 20px;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      margin-bottom: 20px;
+      background: #e3f2fd;
+      padding: 8px 12px;
+      border-radius: 6px;
+      margin-bottom: 12px;
       display: none;
-    }
-
-    .filter-bar.active {
-      display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
+      font-size: 12px;
     }
-
-    .filter-bar .filter-tag {
-      background: #2e7d32;
-      color: white;
-      padding: 6px 12px;
-      border-radius: 16px;
+    .filter-bar.active { display: flex; }
+    .filter-bar button {
+      background: none;
+      border: none;
+      color: #666;
+      cursor: pointer;
       font-size: 14px;
     }
 
-    .filter-bar .clear-filter {
-      background: none;
-      border: none;
-      color: #999;
-      cursor: pointer;
-      font-size: 18px;
-    }
+    .empty { color: #999; font-size: 13px; padding: 20px; text-align: center; }
+    .loading { color: #666; font-size: 13px; padding: 20px; text-align: center; }
 
-    .empty-state {
-      text-align: center;
-      color: #999;
-      padding: 40px;
-    }
-
-    .loading {
-      text-align: center;
-      padding: 20px;
-      color: #666;
-    }
-
-    .spinner {
-      display: inline-block;
-      width: 20px;
-      height: 20px;
-      border: 2px solid #f3f3f3;
-      border-top: 2px solid #007bff;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      margin-right: 10px;
-      vertical-align: middle;
-    }
-
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
+    @media (max-width: 700px) {
+      .main-content { grid-template-columns: 1fr; }
+      .sidebar { position: static; }
     }
   </style>
 </head>
@@ -447,291 +156,70 @@
   <div class="container">
     <h1>Thought Capture</h1>
 
-    <div class="input-section">
-      <input type="text" id="thoughtInput" placeholder="Enter your thought..." onkeydown="if(event.key==='Enter')captureThought()">
-      <div class="button-row">
-        <button id="captureBtn" class="btn btn-primary" onclick="captureThought()">Capture</button>
-        <button id="reviewBtn" class="btn btn-success" onclick="startReview()">Review</button>
-      </div>
+    <div class="input-row">
+      <input type="text" id="input" placeholder="What's on your mind?" onkeydown="if(event.key==='Enter')send()">
+      <button id="sendBtn" onclick="send()">+</button>
     </div>
 
-    <div id="reviewSection" class="review-section">
-      <div class="review-header">
-        <h2>Review Entries</h2>
-        <button class="btn btn-danger" onclick="cancelReview()">Cancel</button>
-      </div>
-
-      <div id="reviewEntries" class="review-entries"></div>
-
-      <div id="reviewSummary" class="review-summary">
-        <h3>Summary</h3>
-        <p id="summaryText"></p>
-      </div>
-
-      <div class="review-results">
-        <div class="result-section events">
-          <h4>📅 Events</h4>
-          <div id="reviewEvents"></div>
+    <div class="main-content">
+      <div class="entries">
+        <div id="filterBar" class="filter-bar">
+          <span>Filtering: <strong id="filterName"></strong></span>
+          <button onclick="clearFilter()">×</button>
         </div>
-        <div class="result-section actions">
-          <h4>✅ Actions</h4>
-          <div id="reviewActions"></div>
-        </div>
-        <div class="result-section entities entities-section">
-          <h4>🏷️ Entities</h4>
-          <div id="reviewEntities" class="entity-tags"></div>
-        </div>
+        <div id="entries"><div class="loading">Loading...</div></div>
       </div>
 
-      <div class="chat-section">
-        <div id="chatMessage" class="chat-message" style="display:none"></div>
-        <div class="chat-input">
-          <input type="text" id="chatInput" placeholder="Ask questions or modify the review... (e.g., 'how long did I work on X?', 'rename entity Y')">
-          <button class="btn btn-primary" onclick="sendChat()">Send</button>
-        </div>
+      <div class="sidebar">
+        <h3>Tags</h3>
+        <div id="tags" class="tag-list"></div>
       </div>
-
-      <div class="review-actions">
-        <button class="btn btn-success" onclick="commitReview()">Commit Review</button>
-      </div>
-    </div>
-
-    <div id="filterBar" class="filter-bar">
-      <span>Filtering by:</span>
-      <span id="filterTagName" class="filter-tag"></span>
-      <button class="clear-filter" onclick="clearFilter()">&times;</button>
-    </div>
-
-    <div id="thoughtsContainer">
-      <div class="loading"><span class="spinner"></span>Loading...</div>
     </div>
   </div>
 
   <script>
     let currentFilter = null;
-    let isReviewing = false;
 
-    async function loadThoughts() {
+    async function load() {
       try {
-        const response = await fetch('/api/thoughts');
-        const grouped = await response.json();
-        renderThoughts(grouped);
-      } catch (error) {
-        console.error('Failed to load thoughts:', error);
-        document.getElementById('thoughtsContainer').innerHTML =
-          '<div class="empty-state">Failed to load thoughts</div>';
+        const [thoughtsRes, tagsRes] = await Promise.all([
+          fetch('/api/thoughts'),
+          fetch('/api/tags')
+        ]);
+        const grouped = await thoughtsRes.json();
+        const tags = await tagsRes.json();
+        render(grouped);
+        renderTags(tags);
+      } catch (e) {
+        document.getElementById('entries').innerHTML = '<div class="empty">Failed to load</div>';
       }
     }
 
-    async function captureThought() {
-      const input = document.getElementById('thoughtInput');
-      const btn = document.getElementById('captureBtn');
+    async function send() {
+      const input = document.getElementById('input');
+      const btn = document.getElementById('sendBtn');
       const content = input.value.trim();
-
-      if (!content) {
-        alert('Please enter a thought');
-        return;
-      }
+      if (!content) return;
 
       btn.disabled = true;
-      btn.textContent = 'Saving...';
-
       try {
-        const response = await fetch('/api/thoughts', {
+        const res = await fetch('/api/thoughts', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ content })
         });
-
-        if (!response.ok) {
-          const data = await response.json();
-          throw new Error(data.error || 'Failed to capture thought');
-        }
-
+        if (!res.ok) throw new Error((await res.json()).error);
         input.value = '';
-        await loadThoughts();
-      } catch (error) {
-        console.error('Failed to capture thought:', error);
-        alert(error.message || 'Failed to capture thought.');
+        await load();
+      } catch (e) {
+        alert(e.message || 'Failed');
       } finally {
         btn.disabled = false;
-        btn.textContent = 'Capture';
-      }
-    }
-
-    async function startReview() {
-      const reviewBtn = document.getElementById('reviewBtn');
-      reviewBtn.disabled = true;
-      reviewBtn.textContent = 'Loading...';
-
-      try {
-        const response = await fetch('/api/review/start', { method: 'POST' });
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.error || 'Failed to start review');
-        }
-
-        isReviewing = true;
-        document.getElementById('reviewSection').classList.add('active');
-
-        // Show entries being reviewed
-        const entriesHtml = data.thoughts.map(t => `
-          <div class="review-entry">
-            <div>${escapeHtml(t.content)}</div>
-            <div class="entry-time">${new Date(t.created_at + 'Z').toLocaleString()}</div>
-          </div>
-        `).join('');
-        document.getElementById('reviewEntries').innerHTML = entriesHtml;
-
-        renderReview(data.review);
-      } catch (error) {
-        console.error('Failed to start review:', error);
-        alert(error.message || 'Failed to start review.');
-      } finally {
-        reviewBtn.disabled = false;
-        reviewBtn.textContent = 'Review';
-      }
-    }
-
-    function renderReview(review) {
-      // Show message if present
-      const chatMessage = document.getElementById('chatMessage');
-      if (review.message) {
-        chatMessage.textContent = review.message;
-        chatMessage.style.display = 'block';
-      } else {
-        chatMessage.style.display = 'none';
-      }
-      document.getElementById('summaryText').textContent = review.summary;
-
-      document.getElementById('reviewEvents').innerHTML = review.events.length > 0
-        ? review.events.map(e => `<div class="result-item">${escapeHtml(e.description)}</div>`).join('')
-        : '<div class="result-item" style="color:#999">No events</div>';
-
-      document.getElementById('reviewActions').innerHTML = review.actions.length > 0
-        ? review.actions.map(a => `<div class="result-item">${escapeHtml(a.description)}</div>`).join('')
-        : '<div class="result-item" style="color:#999">No actions</div>';
-
-      document.getElementById('reviewEntities').innerHTML = review.entities.length > 0
-        ? review.entities.map(e => `<span class="entity-tag">${escapeHtml(e)}</span>`).join('')
-        : '<span style="color:#999">No entities</span>';
-    }
-
-    async function sendChat() {
-      const input = document.getElementById('chatInput');
-      const message = input.value.trim();
-
-      if (!message) return;
-
-      input.disabled = true;
-
-      try {
-        const response = await fetch('/api/review/chat', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message })
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.error || 'Chat failed');
-        }
-
-        input.value = '';
-        renderReview(data.review);
-      } catch (error) {
-        console.error('Chat failed:', error);
-        alert(error.message || 'Chat failed.');
-      } finally {
-        input.disabled = false;
         input.focus();
       }
     }
 
-    async function commitReview() {
-      if (!confirm('Commit this review? This will save the events, actions, and tags.')) {
-        return;
-      }
-
-      try {
-        const response = await fetch('/api/review/commit', { method: 'POST' });
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.error || 'Failed to commit');
-        }
-
-        isReviewing = false;
-        document.getElementById('reviewSection').classList.remove('active');
-        await loadThoughts();
-      } catch (error) {
-        console.error('Commit failed:', error);
-        alert(error.message || 'Failed to commit review.');
-      }
-    }
-
-    async function cancelReview() {
-      try {
-        await fetch('/api/review/cancel', { method: 'POST' });
-      } catch (e) {}
-
-      isReviewing = false;
-      document.getElementById('reviewSection').classList.remove('active');
-    }
-
-    async function filterByTag(tagName) {
-      currentFilter = tagName;
-      document.getElementById('filterBar').classList.add('active');
-      document.getElementById('filterTagName').textContent = tagName;
-
-      try {
-        const response = await fetch(`/api/tags/${encodeURIComponent(tagName)}`);
-        const thoughts = await response.json();
-        renderFilteredThoughts(thoughts, tagName);
-      } catch (error) {
-        console.error('Failed to filter by tag:', error);
-      }
-    }
-
-    function clearFilter() {
-      currentFilter = null;
-      document.getElementById('filterBar').classList.remove('active');
-      loadThoughts();
-    }
-
-    function renderFilteredThoughts(thoughts, tagName) {
-      const container = document.getElementById('thoughtsContainer');
-
-      if (thoughts.length === 0) {
-        container.innerHTML = `<div class="empty-state">No thoughts found with tag "${escapeHtml(tagName)}"</div>`;
-        return;
-      }
-
-      container.innerHTML = `
-        <div class="time-group">
-          <h2>Thoughts tagged "${escapeHtml(tagName)}"</h2>
-          ${thoughts.map(renderThoughtCard).join('')}
-        </div>
-      `;
-    }
-
-    function renderThoughts(grouped) {
-      const container = document.getElementById('thoughtsContainer');
-
-      let html = '';
-      let hasAnyThoughts = false;
-
-      // Show "New" (unreviewed) entries first
-      if (grouped.new && grouped.new.length > 0) {
-        hasAnyThoughts = true;
-        html += `<div class="time-group new-entries">
-          <h2>New (${grouped.new.length} to review)</h2>
-          ${grouped.new.map(renderNewEntryCard).join('')}
-        </div>`;
-      }
-
+    function render(grouped) {
       const periods = [
         { key: 'today', label: 'Today' },
         { key: 'yesterday', label: 'Yesterday' },
@@ -740,85 +228,88 @@
         { key: 'older', label: 'Older' }
       ];
 
-      for (const period of periods) {
-        const thoughts = grouped[period.key];
-        if (thoughts && thoughts.length > 0) {
-          hasAnyThoughts = true;
-          html += `<div class="time-group">
-            <h2>${period.label}</h2>
-            ${thoughts.map(renderThoughtCard).join('')}
-          </div>`;
+      let html = '';
+      let hasAny = false;
+
+      for (const p of periods) {
+        const thoughts = grouped[p.key];
+        if (thoughts?.length > 0) {
+          hasAny = true;
+          html += `<div class="time-group"><h3>${p.label}</h3>${thoughts.map(renderEntry).join('')}</div>`;
         }
       }
 
-      if (!hasAnyThoughts) {
-        html = '<div class="empty-state">No thoughts yet. Capture your first thought above!</div>';
-      }
-
-      container.innerHTML = html;
+      document.getElementById('entries').innerHTML = hasAny
+        ? html
+        : '<div class="empty">No thoughts yet</div>';
     }
 
-    function renderNewEntryCard(thought) {
-      const time = new Date(thought.created_at + 'Z').toLocaleString();
-      return `
-        <div class="new-entry-card">
-          <div class="thought-content">${escapeHtml(thought.content)}</div>
-          <div class="thought-time">${time}</div>
-        </div>
-      `;
-    }
-
-    function renderThoughtCard(thought) {
-      const events = thought.classifications.filter(c => c.type === 'event');
-      const actions = thought.classifications.filter(c => c.type === 'action');
-      const tags = thought.tags || [];
-
-      const time = new Date(thought.created_at + 'Z').toLocaleString();
+    function renderEntry(t) {
+      const time = new Date(t.created_at + 'Z').toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+      const events = t.classifications.filter(c => c.type === 'event');
+      const actions = t.classifications.filter(c => c.type === 'action');
+      const tags = t.tags || [];
 
       return `
-        <div class="thought-card">
-          <div class="thought-content">${escapeHtml(thought.content)}</div>
-          <div class="thought-time">${time}</div>
-          ${tags.length > 0 ? `
-            <div class="tags-section">
-              <div class="tags-container">
-                ${tags.map(t => `<span class="tag" onclick="filterByTag('${escapeHtml(t.name)}')">${escapeHtml(t.name)}</span>`).join('')}
-              </div>
+        <div class="entry">
+          <div class="entry-content">${esc(t.content)}</div>
+          <div class="entry-meta">
+            <span class="entry-time">${time}</span>
+            ${tags.length ? `<div class="entry-tags">${tags.map(tag =>
+              `<span class="entry-tag" onclick="filterBy('${esc(tag.name)}')">${esc(tag.name)}</span>`
+            ).join('')}</div>` : ''}
+          </div>
+          ${(events.length || actions.length) ? `
+            <div class="entry-classifications">
+              ${events.map(e => `<span class="entry-event">${esc(e.description)}</span>`).join('')}
+              ${actions.map(a => `<span class="entry-action">${esc(a.description)}</span>`).join('')}
             </div>
           ` : ''}
-          <div class="classifications">
-            ${events.length > 0 ? `
-              <div class="classification-group events">
-                <h4>📅 Events</h4>
-                ${events.map(e => `<div class="classification-item">${escapeHtml(e.description)}</div>`).join('')}
-              </div>
-            ` : ''}
-            ${actions.length > 0 ? `
-              <div class="classification-group actions">
-                <h4>✅ Actions</h4>
-                ${actions.map(a => `<div class="classification-item">${escapeHtml(a.description)}</div>`).join('')}
-              </div>
-            ` : ''}
-          </div>
         </div>
       `;
     }
 
-    function escapeHtml(text) {
-      const div = document.createElement('div');
-      div.textContent = text;
-      return div.innerHTML;
+    function renderTags(tags) {
+      document.getElementById('tags').innerHTML = tags.length
+        ? tags.map(t => `<span class="sidebar-tag${currentFilter === t ? ' active' : ''}" onclick="filterBy('${esc(t)}')">${esc(t)}</span>`).join('')
+        : '<span style="color:#999;font-size:11px">No tags yet</span>';
     }
 
-    // Keyboard shortcuts
-    document.getElementById('chatInput').addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        sendChat();
-      }
-    });
+    async function filterBy(tag) {
+      currentFilter = tag;
+      document.getElementById('filterBar').classList.add('active');
+      document.getElementById('filterName').textContent = tag;
 
-    // Initialize
-    loadThoughts();
+      try {
+        const res = await fetch(`/api/tags/${encodeURIComponent(tag)}`);
+        const thoughts = await res.json();
+        document.getElementById('entries').innerHTML = thoughts.length
+          ? thoughts.map(renderEntry).join('')
+          : '<div class="empty">No entries</div>';
+
+        // Update tag highlighting
+        document.querySelectorAll('.sidebar-tag').forEach(el => {
+          el.classList.toggle('active', el.textContent === tag);
+        });
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function clearFilter() {
+      currentFilter = null;
+      document.getElementById('filterBar').classList.remove('active');
+      document.querySelectorAll('.sidebar-tag').forEach(el => el.classList.remove('active'));
+      load();
+    }
+
+    function esc(s) {
+      const d = document.createElement('div');
+      d.textContent = s;
+      return d.innerHTML;
+    }
+
+    load();
   </script>
 </body>
 </html>

@@ -2,28 +2,17 @@ import {
   createThought,
   addClassification,
   addTag,
-  getUnreviewedThoughts,
-  getReviewedThoughts,
-  markThoughtsReviewed,
+  getAllThoughts,
   getAllTags,
   getAllActions,
   getThoughtsByTag,
   type ThoughtWithClassifications,
   type Classification,
   type Tag,
-  type Thought,
 } from "./db";
-import {
-  startReview,
-  processReview,
-  chatWithReview,
-  clearReview,
-  type ReviewResult,
-} from "./classifier";
+import { classifyThought } from "./classifier";
 
-// Group thoughts by time period
 interface GroupedThoughts {
-  new: Thought[];
   today: ThoughtWithClassifications[];
   yesterday: ThoughtWithClassifications[];
   thisWeek: ThoughtWithClassifications[];
@@ -68,12 +57,8 @@ function groupThoughtsByTime(thoughts: ThoughtWithClassifications[]): GroupedTho
 const port = process.env.PORT || 3000;
 
 if (!process.env.ANTHROPIC_API_KEY) {
-  console.warn("⚠️  WARNING: ANTHROPIC_API_KEY is not set. Review will fail.");
+  console.warn("⚠️  WARNING: ANTHROPIC_API_KEY is not set.");
 }
-
-// Store current review state
-let currentReviewResult: ReviewResult | null = null;
-let currentReviewThoughts: Thought[] = [];
 
 const server = Bun.serve({
   port,
@@ -90,7 +75,6 @@ const server = Bun.serve({
       return new Response(null, { headers: corsHeaders });
     }
 
-    // Serve the frontend
     if (url.pathname === "/" || url.pathname === "/index.html") {
       const html = await Bun.file("public/index.html").text();
       return new Response(html, {
@@ -98,16 +82,14 @@ const server = Bun.serve({
       });
     }
 
-    // API: Get all thoughts grouped by time (with unreviewed in "new")
+    // Get all thoughts grouped by time
     if (url.pathname === "/api/thoughts" && req.method === "GET") {
-      const reviewed = getReviewedThoughts();
-      const unreviewed = getUnreviewedThoughts();
-      const grouped = groupThoughtsByTime(reviewed);
-      grouped.new = unreviewed;
+      const thoughts = getAllThoughts();
+      const grouped = groupThoughtsByTime(thoughts);
       return Response.json(grouped, { headers: corsHeaders });
     }
 
-    // API: Create a new thought entry (just stores, no AI)
+    // Create and classify a thought
     if (url.pathname === "/api/thoughts" && req.method === "POST") {
       try {
         const body = await req.json();
@@ -118,138 +100,44 @@ const server = Bun.serve({
         }
 
         const thought = createThought(content);
-        return Response.json(thought, { status: 201, headers: corsHeaders });
-      } catch (error) {
-        console.error("Error creating thought:", error);
-        const message = error instanceof Error ? error.message : "Unknown error";
-        return Response.json(
-          { error: `Failed to create thought: ${message}` },
-          { status: 500, headers: corsHeaders }
-        );
-      }
-    }
 
-    // API: Start review of unreviewed entries
-    if (url.pathname === "/api/review/start" && req.method === "POST") {
-      try {
-        const unreviewed = getUnreviewedThoughts();
-        if (unreviewed.length === 0) {
-          return Response.json({ error: "No entries to review" }, { status: 400, headers: corsHeaders });
-        }
-
+        // Get context and classify
         const existingEntities = getAllTags();
         const openActions = getAllActions();
+        const classifications = await classifyThought(content, { existingEntities, openActions });
 
-        currentReviewThoughts = unreviewed;
-        startReview(unreviewed, { existingEntities, openActions });
-        const result = await processReview();
-        currentReviewResult = result;
+        // Store
+        const storedClassifications: Classification[] = [];
+        for (const event of classifications.events) {
+          storedClassifications.push(addClassification(thought.id, "event", event));
+        }
+        for (const action of classifications.actions) {
+          storedClassifications.push(addClassification(thought.id, "action", action));
+        }
 
-        return Response.json({
-          thoughts: unreviewed,
-          review: result,
-        }, { headers: corsHeaders });
-      } catch (error) {
-        console.error("Error starting review:", error);
-        const message = error instanceof Error ? error.message : "Unknown error";
+        const storedTags: Tag[] = [];
+        for (const entity of classifications.entities) {
+          storedTags.push(addTag(thought.id, entity));
+        }
+
         return Response.json(
-          { error: `Failed to start review: ${message}` },
-          { status: 500, headers: corsHeaders }
+          { ...thought, classifications: storedClassifications, tags: storedTags },
+          { status: 201, headers: corsHeaders }
         );
+      } catch (error) {
+        console.error("Error:", error);
+        const message = error instanceof Error ? error.message : "Unknown error";
+        return Response.json({ error: message }, { status: 500, headers: corsHeaders });
       }
     }
 
-    // API: Chat with review
-    if (url.pathname === "/api/review/chat" && req.method === "POST") {
-      try {
-        const body = await req.json();
-        const { message } = body as { message: string };
-
-        if (!message || typeof message !== "string") {
-          return Response.json({ error: "Message is required" }, { status: 400, headers: corsHeaders });
-        }
-
-        const result = await chatWithReview(message);
-        currentReviewResult = result;
-
-        return Response.json({ review: result }, { headers: corsHeaders });
-      } catch (error) {
-        console.error("Error in review chat:", error);
-        const message = error instanceof Error ? error.message : "Unknown error";
-        return Response.json(
-          { error: `Chat failed: ${message}` },
-          { status: 500, headers: corsHeaders }
-        );
-      }
-    }
-
-    // API: Commit review results
-    if (url.pathname === "/api/review/commit" && req.method === "POST") {
-      try {
-        if (!currentReviewResult || currentReviewThoughts.length === 0) {
-          return Response.json({ error: "No review to commit" }, { status: 400, headers: corsHeaders });
-        }
-
-        const thoughtIds = currentReviewThoughts.map(t => t.id);
-
-        // Add classifications
-        for (const event of currentReviewResult.events) {
-          for (const thoughtId of event.thoughtIds) {
-            if (thoughtIds.includes(thoughtId)) {
-              addClassification(thoughtId, "event", event.description);
-            }
-          }
-        }
-
-        for (const action of currentReviewResult.actions) {
-          for (const thoughtId of action.thoughtIds) {
-            if (thoughtIds.includes(thoughtId)) {
-              addClassification(thoughtId, "action", action.description);
-            }
-          }
-        }
-
-        // Add tags to all reviewed thoughts
-        for (const entity of currentReviewResult.entities) {
-          for (const thoughtId of thoughtIds) {
-            addTag(thoughtId, entity);
-          }
-        }
-
-        // Mark thoughts as reviewed
-        markThoughtsReviewed(thoughtIds);
-
-        // Clear review state
-        clearReview();
-        currentReviewResult = null;
-        currentReviewThoughts = [];
-
-        return Response.json({ success: true }, { headers: corsHeaders });
-      } catch (error) {
-        console.error("Error committing review:", error);
-        const message = error instanceof Error ? error.message : "Unknown error";
-        return Response.json(
-          { error: `Failed to commit: ${message}` },
-          { status: 500, headers: corsHeaders }
-        );
-      }
-    }
-
-    // API: Cancel review
-    if (url.pathname === "/api/review/cancel" && req.method === "POST") {
-      clearReview();
-      currentReviewResult = null;
-      currentReviewThoughts = [];
-      return Response.json({ success: true }, { headers: corsHeaders });
-    }
-
-    // API: Get all unique tags
+    // Get all tags
     if (url.pathname === "/api/tags" && req.method === "GET") {
       const tags = getAllTags();
       return Response.json(tags, { headers: corsHeaders });
     }
 
-    // API: Get thoughts by tag
+    // Get thoughts by tag
     const tagMatch = url.pathname.match(/^\/api\/tags\/(.+)$/);
     if (tagMatch && req.method === "GET") {
       const tagName = decodeURIComponent(tagMatch[1]);
