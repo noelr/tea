@@ -1,26 +1,14 @@
-import {
-  createThought,
-  addClassification,
-  addTag,
-  getAllThoughts,
-  getAllTags,
-  getAllActions,
-  getThoughtsByTag,
-  type ThoughtWithClassifications,
-  type Classification,
-  type Tag,
-} from "./db";
-import { classifyThought } from "./classifier";
+import { createThought, getAllThoughts, type Thought } from "./db";
 
 interface GroupedThoughts {
-  today: ThoughtWithClassifications[];
-  yesterday: ThoughtWithClassifications[];
-  thisWeek: ThoughtWithClassifications[];
-  thisMonth: ThoughtWithClassifications[];
-  older: ThoughtWithClassifications[];
+  today: Thought[];
+  yesterday: Thought[];
+  thisWeek: Thought[];
+  thisMonth: Thought[];
+  older: Thought[];
 }
 
-function groupThoughtsByTime(thoughts: ThoughtWithClassifications[]): GroupedThoughts {
+function groupThoughtsByTime(thoughts: Thought[]): GroupedThoughts {
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
@@ -56,10 +44,6 @@ function groupThoughtsByTime(thoughts: ThoughtWithClassifications[]): GroupedTho
 
 const port = process.env.PORT || 3000;
 
-if (!process.env.ANTHROPIC_API_KEY) {
-  console.warn("⚠️  WARNING: ANTHROPIC_API_KEY is not set.");
-}
-
 const server = Bun.serve({
   port,
   async fetch(req) {
@@ -82,14 +66,12 @@ const server = Bun.serve({
       });
     }
 
-    // Get all thoughts grouped by time
     if (url.pathname === "/api/thoughts" && req.method === "GET") {
       const thoughts = getAllThoughts();
       const grouped = groupThoughtsByTime(thoughts);
       return Response.json(grouped, { headers: corsHeaders });
     }
 
-    // Create and classify a thought
     if (url.pathname === "/api/thoughts" && req.method === "POST") {
       try {
         const body = await req.json();
@@ -100,49 +82,12 @@ const server = Bun.serve({
         }
 
         const thought = createThought(content);
-
-        // Get context and classify
-        const existingEntities = getAllTags();
-        const openActions = getAllActions();
-        const classifications = await classifyThought(content, { existingEntities, openActions });
-
-        // Store
-        const storedClassifications: Classification[] = [];
-        for (const event of classifications.events) {
-          storedClassifications.push(addClassification(thought.id, "event", event));
-        }
-        for (const action of classifications.actions) {
-          storedClassifications.push(addClassification(thought.id, "action", action));
-        }
-
-        const storedTags: Tag[] = [];
-        for (const entity of classifications.entities) {
-          storedTags.push(addTag(thought.id, entity));
-        }
-
-        return Response.json(
-          { ...thought, classifications: storedClassifications, tags: storedTags },
-          { status: 201, headers: corsHeaders }
-        );
+        return Response.json(thought, { status: 201, headers: corsHeaders });
       } catch (error) {
         console.error("Error:", error);
         const message = error instanceof Error ? error.message : "Unknown error";
         return Response.json({ error: message }, { status: 500, headers: corsHeaders });
       }
-    }
-
-    // Get all tags
-    if (url.pathname === "/api/tags" && req.method === "GET") {
-      const tags = getAllTags();
-      return Response.json(tags, { headers: corsHeaders });
-    }
-
-    // Get thoughts by tag
-    const tagMatch = url.pathname.match(/^\/api\/tags\/(.+)$/);
-    if (tagMatch && req.method === "GET") {
-      const tagName = decodeURIComponent(tagMatch[1]);
-      const thoughts = getThoughtsByTag(tagName);
-      return Response.json(thoughts, { headers: corsHeaders });
     }
 
     return new Response("Not Found", { status: 404, headers: corsHeaders });

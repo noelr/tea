@@ -12,7 +12,7 @@
       min-height: 100vh;
       padding: 15px;
     }
-    .container { max-width: 1000px; margin: 0 auto; }
+    .container { max-width: 600px; margin: 0 auto; }
     h1 { color: #333; margin-bottom: 15px; font-size: 20px; }
 
     .input-row {
@@ -40,13 +40,6 @@
     .input-row button:hover { background: #0056b3; }
     .input-row button:disabled { background: #ccc; }
 
-    .main-content {
-      display: grid;
-      grid-template-columns: 1fr 200px;
-      gap: 15px;
-    }
-
-    .entries { }
     .time-group { margin-bottom: 12px; }
     .time-group h3 {
       font-size: 11px;
@@ -63,93 +56,11 @@
       margin-bottom: 6px;
       box-shadow: 0 1px 3px rgba(0,0,0,0.08);
     }
-    .entry-content { font-size: 13px; color: #333; margin-bottom: 4px; }
-    .entry-meta {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      align-items: center;
-    }
-    .entry-time { font-size: 10px; color: #999; }
-    .entry-tags { display: flex; gap: 4px; flex-wrap: wrap; }
-    .entry-tag {
-      font-size: 10px;
-      padding: 2px 6px;
-      background: #e8f5e9;
-      color: #2e7d32;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-    .entry-tag:hover { background: #c8e6c9; }
-    .entry-classifications {
-      display: flex;
-      gap: 8px;
-      margin-top: 6px;
-      flex-wrap: wrap;
-    }
-    .entry-event, .entry-action {
-      font-size: 11px;
-      padding: 3px 8px;
-      border-radius: 4px;
-    }
-    .entry-event { background: #f3e5f5; color: #7b1fa2; }
-    .entry-action { background: #fff3e0; color: #e65100; }
-
-    .sidebar {
-      background: white;
-      padding: 12px;
-      border-radius: 6px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-      height: fit-content;
-      position: sticky;
-      top: 15px;
-    }
-    .sidebar h3 {
-      font-size: 11px;
-      text-transform: uppercase;
-      color: #888;
-      margin-bottom: 8px;
-      letter-spacing: 0.5px;
-    }
-    .tag-list { display: flex; flex-wrap: wrap; gap: 4px; }
-    .sidebar-tag {
-      font-size: 11px;
-      padding: 4px 8px;
-      background: #f5f5f5;
-      color: #555;
-      border-radius: 10px;
-      cursor: pointer;
-      transition: all 0.15s;
-    }
-    .sidebar-tag:hover { background: #e8f5e9; color: #2e7d32; }
-    .sidebar-tag.active { background: #2e7d32; color: white; }
-
-    .filter-bar {
-      background: #e3f2fd;
-      padding: 8px 12px;
-      border-radius: 6px;
-      margin-bottom: 12px;
-      display: none;
-      align-items: center;
-      gap: 8px;
-      font-size: 12px;
-    }
-    .filter-bar.active { display: flex; }
-    .filter-bar button {
-      background: none;
-      border: none;
-      color: #666;
-      cursor: pointer;
-      font-size: 14px;
-    }
+    .entry-content { font-size: 13px; color: #333; }
+    .entry-time { font-size: 10px; color: #999; margin-top: 4px; }
 
     .empty { color: #999; font-size: 13px; padding: 20px; text-align: center; }
     .loading { color: #666; font-size: 13px; padding: 20px; text-align: center; }
-
-    @media (max-width: 700px) {
-      .main-content { grid-template-columns: 1fr; }
-      .sidebar { position: static; }
-    }
   </style>
 </head>
 <body>
@@ -161,35 +72,15 @@
       <button id="sendBtn" onclick="send()">+</button>
     </div>
 
-    <div class="main-content">
-      <div class="entries">
-        <div id="filterBar" class="filter-bar">
-          <span>Filtering: <strong id="filterName"></strong></span>
-          <button onclick="clearFilter()">×</button>
-        </div>
-        <div id="entries"><div class="loading">Loading...</div></div>
-      </div>
-
-      <div class="sidebar">
-        <h3>Tags</h3>
-        <div id="tags" class="tag-list"></div>
-      </div>
-    </div>
+    <div id="entries"><div class="loading">Loading...</div></div>
   </div>
 
   <script>
-    let currentFilter = null;
-
     async function load() {
       try {
-        const [thoughtsRes, tagsRes] = await Promise.all([
-          fetch('/api/thoughts'),
-          fetch('/api/tags')
-        ]);
-        const grouped = await thoughtsRes.json();
-        const tags = await tagsRes.json();
+        const res = await fetch('/api/thoughts');
+        const grouped = await res.json();
         render(grouped);
-        renderTags(tags);
       } catch (e) {
         document.getElementById('entries').innerHTML = '<div class="empty">Failed to load</div>';
       }
@@ -246,61 +137,12 @@
 
     function renderEntry(t) {
       const time = new Date(t.created_at + 'Z').toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-      const events = t.classifications.filter(c => c.type === 'event');
-      const actions = t.classifications.filter(c => c.type === 'action');
-      const tags = t.tags || [];
-
       return `
         <div class="entry">
           <div class="entry-content">${esc(t.content)}</div>
-          <div class="entry-meta">
-            <span class="entry-time">${time}</span>
-            ${tags.length ? `<div class="entry-tags">${tags.map(tag =>
-              `<span class="entry-tag" onclick="filterBy('${esc(tag.name)}')">${esc(tag.name)}</span>`
-            ).join('')}</div>` : ''}
-          </div>
-          ${(events.length || actions.length) ? `
-            <div class="entry-classifications">
-              ${events.map(e => `<span class="entry-event">${esc(e.description)}</span>`).join('')}
-              ${actions.map(a => `<span class="entry-action">${esc(a.description)}</span>`).join('')}
-            </div>
-          ` : ''}
+          <div class="entry-time">${time}</div>
         </div>
       `;
-    }
-
-    function renderTags(tags) {
-      document.getElementById('tags').innerHTML = tags.length
-        ? tags.map(t => `<span class="sidebar-tag${currentFilter === t ? ' active' : ''}" onclick="filterBy('${esc(t)}')">${esc(t)}</span>`).join('')
-        : '<span style="color:#999;font-size:11px">No tags yet</span>';
-    }
-
-    async function filterBy(tag) {
-      currentFilter = tag;
-      document.getElementById('filterBar').classList.add('active');
-      document.getElementById('filterName').textContent = tag;
-
-      try {
-        const res = await fetch(`/api/tags/${encodeURIComponent(tag)}`);
-        const thoughts = await res.json();
-        document.getElementById('entries').innerHTML = thoughts.length
-          ? thoughts.map(renderEntry).join('')
-          : '<div class="empty">No entries</div>';
-
-        // Update tag highlighting
-        document.querySelectorAll('.sidebar-tag').forEach(el => {
-          el.classList.toggle('active', el.textContent === tag);
-        });
-      } catch (e) {
-        console.error(e);
-      }
-    }
-
-    function clearFilter() {
-      currentFilter = null;
-      document.getElementById('filterBar').classList.remove('active');
-      document.querySelectorAll('.sidebar-tag').forEach(el => el.classList.remove('active'));
-      load();
     }
 
     function esc(s) {
