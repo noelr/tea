@@ -1,46 +1,11 @@
-import { createThought, getAllThoughts, type Thought } from "./db";
-
-interface GroupedThoughts {
-  today: Thought[];
-  yesterday: Thought[];
-  thisWeek: Thought[];
-  thisMonth: Thought[];
-  older: Thought[];
-}
-
-function groupThoughtsByTime(thoughts: Thought[]): GroupedThoughts {
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
-  const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-  const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
-
-  const grouped: GroupedThoughts = {
-    today: [],
-    yesterday: [],
-    thisWeek: [],
-    thisMonth: [],
-    older: [],
-  };
-
-  for (const thought of thoughts) {
-    const createdAt = new Date(thought.created_at + "Z");
-
-    if (createdAt >= today) {
-      grouped.today.push(thought);
-    } else if (createdAt >= yesterday) {
-      grouped.yesterday.push(thought);
-    } else if (createdAt >= weekAgo) {
-      grouped.thisWeek.push(thought);
-    } else if (createdAt >= monthAgo) {
-      grouped.thisMonth.push(thought);
-    } else {
-      grouped.older.push(thought);
-    }
-  }
-
-  return grouped;
-}
+import {
+  addMessage, getRecentMessages,
+  getAllWorkingOn, getAllReminders, getAllNotes,
+  deleteWorkingOn, deleteReminder, deleteNote,
+  updateReminder,
+} from "./db";
+import { processMessage } from "./classifier";
+import type { MessageParam } from "@anthropic-ai/sdk/resources/messages";
 
 const port = process.env.PORT || 3000;
 
@@ -51,7 +16,7 @@ const server = Bun.serve({
 
     const corsHeaders = {
       "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+      "Access-Control-Allow-Methods": "GET, POST, PATCH, DELETE, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type",
     };
 
@@ -59,6 +24,7 @@ const server = Bun.serve({
       return new Response(null, { headers: corsHeaders });
     }
 
+    // Serve index.html
     if (url.pathname === "/" || url.pathname === "/index.html") {
       const html = await Bun.file("public/index.html").text();
       return new Response(html, {
@@ -66,32 +32,87 @@ const server = Bun.serve({
       });
     }
 
-    if (url.pathname === "/api/thoughts" && req.method === "GET") {
-      const thoughts = getAllThoughts();
-      const grouped = groupThoughtsByTime(thoughts);
-      return Response.json(grouped, { headers: corsHeaders });
-    }
-
-    if (url.pathname === "/api/thoughts" && req.method === "POST") {
+    // Chat endpoint
+    if (url.pathname === "/api/chat" && req.method === "POST") {
       try {
-        const body = await req.json();
-        const { content } = body as { content: string };
-
-        if (!content || typeof content !== "string") {
-          return Response.json({ error: "Content is required" }, { status: 400, headers: corsHeaders });
+        const { message } = await req.json() as { message: string };
+        if (!message || typeof message !== "string") {
+          return Response.json({ error: "Message is required" }, { status: 400, headers: corsHeaders });
         }
 
-        const thought = createThought(content);
-        return Response.json(thought, { status: 201, headers: corsHeaders });
+        // Store user message
+        addMessage("user", message);
+
+        // Build conversation history from recent messages
+        const recentMessages = getRecentMessages(30).reverse();
+        const history: MessageParam[] = recentMessages.map(m => ({
+          role: m.role as "user" | "assistant",
+          content: m.content,
+        }));
+
+        // Process with LLM
+        const result = await processMessage(history);
+
+        // Store assistant response
+        addMessage("assistant", result.response);
+
+        return Response.json({
+          response: result.response,
+          toolCalls: result.toolCalls,
+        }, { headers: corsHeaders });
       } catch (error) {
-        console.error("Error:", error);
+        console.error("Chat error:", error);
         const message = error instanceof Error ? error.message : "Unknown error";
         return Response.json({ error: message }, { status: 500, headers: corsHeaders });
       }
+    }
+
+    // Get all entries for sidebar
+    if (url.pathname === "/api/entries" && req.method === "GET") {
+      return Response.json({
+        workingOn: getAllWorkingOn(),
+        reminders: getAllReminders(),
+        notes: getAllNotes(),
+      }, { headers: corsHeaders });
+    }
+
+    // Get chat history
+    if (url.pathname === "/api/messages" && req.method === "GET") {
+      const messages = getRecentMessages(50).reverse();
+      return Response.json(messages, { headers: corsHeaders });
+    }
+
+    // Delete working_on entry
+    const workingOnMatch = url.pathname.match(/^\/api\/working_on\/(\d+)$/);
+    if (workingOnMatch && req.method === "DELETE") {
+      const deleted = deleteWorkingOn(Number(workingOnMatch[1]));
+      return Response.json({ ok: deleted }, { headers: corsHeaders });
+    }
+
+    // Delete reminder
+    const reminderDeleteMatch = url.pathname.match(/^\/api\/reminders\/(\d+)$/);
+    if (reminderDeleteMatch && req.method === "DELETE") {
+      const deleted = deleteReminder(Number(reminderDeleteMatch[1]));
+      return Response.json({ ok: deleted }, { headers: corsHeaders });
+    }
+
+    // Toggle reminder done
+    const reminderPatchMatch = url.pathname.match(/^\/api\/reminders\/(\d+)$/);
+    if (reminderPatchMatch && req.method === "PATCH") {
+      const { done } = await req.json() as { done: boolean };
+      const updated = updateReminder(Number(reminderPatchMatch[1]), undefined, done ? 1 : 0);
+      return Response.json({ ok: !!updated, entry: updated }, { headers: corsHeaders });
+    }
+
+    // Delete note
+    const noteMatch = url.pathname.match(/^\/api\/notes\/(\d+)$/);
+    if (noteMatch && req.method === "DELETE") {
+      const deleted = deleteNote(Number(noteMatch[1]));
+      return Response.json({ ok: deleted }, { headers: corsHeaders });
     }
 
     return new Response("Not Found", { status: 404, headers: corsHeaders });
   },
 });
 
-console.log(`🧠 Thought Capture running at http://localhost:${server.port}`);
+console.log(`Work Journal running at http://localhost:${server.port}`);
