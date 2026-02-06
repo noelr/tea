@@ -1,7 +1,8 @@
 import { Database } from "bun:sqlite";
 
-// Use /data on Railway (persistent volume), local file otherwise
-const dbPath = process.env.RAILWAY_ENVIRONMENT ? "/data/journal.db" : "journal.db";
+// Use Railway volume mount path if available, local file otherwise
+const volumePath = process.env.RAILWAY_VOLUME_MOUNT_PATH;
+const dbPath = volumePath ? `${volumePath}/journal.db` : "journal.db";
 const db = new Database(dbPath);
 
 db.run(`
