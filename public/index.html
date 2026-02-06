@@ -97,27 +97,6 @@
       display: none;
     }
 
-    /* Mobile sidebar toggle */
-    .sidebar-toggle {
-      display: none;
-      background: var(--bg-glass);
-      border: 1px solid var(--border-glass);
-      color: var(--text-secondary);
-      width: 36px;
-      height: 36px;
-      border-radius: var(--radius-xs);
-      cursor: pointer;
-      font-size: 18px;
-      align-items: center;
-      justify-content: center;
-      margin-left: auto;
-      transition: all 0.2s;
-    }
-    .sidebar-toggle:hover {
-      background: var(--bg-glass-hover);
-      color: var(--text-primary);
-    }
-
     .layout {
       position: relative;
       z-index: 1;
@@ -354,9 +333,6 @@
       position: relative;
       transition: background 0.15s;
     }
-    .entry-item:hover { background: var(--bg-glass-hover); }
-    .entry-item:hover .entry-delete { opacity: 1; }
-
     .entry-text { flex: 1; line-height: 1.45; }
     .entry-time {
       font-size: 10px;
@@ -364,18 +340,6 @@
       white-space: nowrap;
       margin-top: 2px;
     }
-    .entry-delete {
-      opacity: 0;
-      background: none;
-      border: none;
-      color: var(--text-muted);
-      cursor: pointer;
-      font-size: 14px;
-      padding: 0 2px;
-      line-height: 1;
-      transition: all 0.15s;
-    }
-    .entry-delete:hover { color: var(--red); }
 
     /* Working on dot */
     .working-dot {
@@ -522,8 +486,6 @@
         grid-template-columns: 1fr;
       }
 
-      .sidebar-toggle { display: flex; }
-
       .sidebar {
         position: fixed;
         top: 0;
@@ -538,6 +500,10 @@
         -webkit-backdrop-filter: blur(24px);
       }
       .sidebar.open { right: 0; }
+
+      .sidebar {
+        padding-top: 48px;
+      }
 
       .sidebar .sidebar-close {
         display: flex;
@@ -590,9 +556,6 @@
     <div class="logo">W</div>
     <span class="title">Work Journal</span>
     <span class="subtitle">Your AI work companion</span>
-    <button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
-    </button>
   </header>
 
   <div class="mobile-status" id="mobileStatus" onclick="toggleSidebar()">
@@ -704,7 +667,6 @@
           <div class="working-dot"></div>
           <div class="entry-text">${esc(w.project)}</div>
           <span class="entry-time">${fmtTime(w.started_at)}</span>
-          <button class="entry-delete" onclick="deleteEntry('working_on',${w.id})">&times;</button>
         </div>
       `).join('');
       if (chips) {
@@ -724,7 +686,6 @@
         <div class="entry-item${r.done ? ' done' : ''}">
           <div class="reminder-check${r.done ? ' done' : ''}" onclick="toggleReminder(${r.id},${!r.done})">${r.done ? '&#10003;' : ''}</div>
           <div class="entry-text">${esc(r.content)}</div>
-          <button class="entry-delete" onclick="deleteEntry('reminders',${r.id})">&times;</button>
         </div>
       `).join('');
     }
@@ -740,7 +701,6 @@
           <span class="note-bullet">&bull;</span>
           <div class="entry-text">${esc(n.content)}</div>
           <span class="entry-time">${fmtTime(n.created_at)}</span>
-          <button class="entry-delete" onclick="deleteEntry('notes',${n.id})">&times;</button>
         </div>
       `).join('');
     }
@@ -809,11 +769,6 @@
       el.textContent = text;
       container.appendChild(el);
       container.scrollTop = container.scrollHeight;
-    }
-
-    async function deleteEntry(type, id) {
-      await fetch(`/api/${type}/${id}`, { method: 'DELETE' });
-      loadEntries();
     }
 
     async function toggleReminder(id, done) {
