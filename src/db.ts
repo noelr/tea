@@ -1,6 +1,8 @@
 import { Database } from "bun:sqlite";
 
-const db = new Database("journal.db");
+// Use /data on Railway (persistent volume), local file otherwise
+const dbPath = process.env.RAILWAY_ENVIRONMENT ? "/data/journal.db" : "journal.db";
+const db = new Database(dbPath);
 
 db.run(`
   CREATE TABLE IF NOT EXISTS working_on (
