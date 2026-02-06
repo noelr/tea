@@ -3,333 +3,467 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Thought Capture</title>
+  <title>Work Journal</title>
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #f5f5f5;
-      min-height: 100vh;
-      padding: 20px;
-    }
-
-    .container {
-      max-width: 800px;
-      margin: 0 auto;
-    }
-
-    h1 {
-      text-align: center;
-      color: #333;
-      margin-bottom: 30px;
-    }
-
-    .input-section {
-      background: white;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      margin-bottom: 30px;
-    }
-
-    .input-section textarea {
-      width: 100%;
-      padding: 15px;
-      border: 2px solid #e0e0e0;
-      border-radius: 8px;
-      font-size: 16px;
-      resize: vertical;
-      min-height: 80px;
-      font-family: inherit;
-    }
-
-    .input-section textarea:focus {
-      outline: none;
-      border-color: #007bff;
-    }
-
-    .input-section button {
-      margin-top: 15px;
-      padding: 12px 30px;
-      background: #007bff;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-size: 16px;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-
-    .input-section button:hover {
-      background: #0056b3;
-    }
-
-    .input-section button:disabled {
-      background: #ccc;
-      cursor: not-allowed;
-    }
-
-    .time-group {
-      margin-bottom: 25px;
-    }
-
-    .time-group h2 {
-      color: #555;
-      font-size: 18px;
-      margin-bottom: 15px;
-      padding-bottom: 8px;
-      border-bottom: 2px solid #e0e0e0;
-    }
-
-    .thought-card {
-      background: white;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      margin-bottom: 15px;
-    }
-
-    .thought-content {
-      font-size: 16px;
-      color: #333;
-      margin-bottom: 15px;
-      line-height: 1.5;
-    }
-
-    .thought-time {
-      font-size: 12px;
-      color: #999;
-      margin-bottom: 15px;
-    }
-
-    .classifications {
+      background: #f0f2f5;
+      height: 100vh;
       display: flex;
-      flex-wrap: wrap;
+      flex-direction: column;
+    }
+
+    header {
+      background: #1a1a2e;
+      color: white;
+      padding: 12px 20px;
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* Chat panel */
+    .chat-panel {
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid #e0e0e0;
+      min-height: 0;
+    }
+
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
       gap: 10px;
     }
 
-    .classification-group {
+    .msg {
+      max-width: 80%;
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-size: 14px;
+      line-height: 1.4;
+      word-wrap: break-word;
+    }
+    .msg.user {
+      align-self: flex-end;
+      background: #007bff;
+      color: white;
+      border-bottom-right-radius: 4px;
+    }
+    .msg.assistant {
+      align-self: flex-start;
+      background: white;
+      color: #333;
+      border-bottom-left-radius: 4px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+    .msg .tool-badges {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+      margin-top: 6px;
+    }
+    .tool-badge {
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 8px;
+      font-weight: 500;
+    }
+    .tool-badge.working_on { background: #e3f2fd; color: #1565c0; }
+    .tool-badge.reminder { background: #fff3e0; color: #e65100; }
+    .tool-badge.note { background: #e8f5e9; color: #2e7d32; }
+
+    .chat-input {
+      display: flex;
+      gap: 8px;
+      padding: 12px 16px;
+      border-top: 1px solid #e0e0e0;
+      background: white;
+    }
+    .chat-input input {
       flex: 1;
-      min-width: 150px;
+      padding: 10px 14px;
+      border: 1px solid #ddd;
+      border-radius: 20px;
+      font-size: 14px;
+      outline: none;
+    }
+    .chat-input input:focus { border-color: #007bff; }
+    .chat-input button {
+      padding: 10px 18px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+    }
+    .chat-input button:hover { background: #0056b3; }
+    .chat-input button:disabled { background: #ccc; cursor: default; }
+
+    .typing {
+      align-self: flex-start;
+      padding: 10px 14px;
+      background: white;
+      border-radius: 12px;
+      border-bottom-left-radius: 4px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+      font-size: 14px;
+      color: #999;
+      display: none;
+    }
+    .typing.visible { display: block; }
+
+    /* Sidebar */
+    .sidebar {
+      background: white;
+      overflow-y: auto;
+      padding: 0;
     }
 
-    .classification-group h4 {
-      font-size: 12px;
+    .sidebar-section {
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .sidebar-section:last-child { border-bottom: none; }
+
+    .section-header {
+      font-size: 11px;
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      margin-bottom: 8px;
+      color: #888;
+      padding: 14px 16px 8px;
+      font-weight: 600;
+    }
+
+    .entry-list { padding: 0 12px 12px; }
+
+    .entry-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 6px 8px;
+      border-radius: 6px;
+      font-size: 13px;
+      color: #333;
+      position: relative;
+    }
+    .entry-item:hover { background: #f8f9fa; }
+    .entry-item:hover .entry-delete { opacity: 1; }
+
+    .entry-text { flex: 1; line-height: 1.4; }
+    .entry-time {
+      font-size: 10px;
+      color: #aaa;
+      white-space: nowrap;
+      margin-top: 2px;
+    }
+    .entry-delete {
+      opacity: 0;
+      background: none;
+      border: none;
+      color: #ccc;
+      cursor: pointer;
+      font-size: 14px;
+      padding: 0 2px;
+      line-height: 1;
+      transition: opacity 0.15s;
+    }
+    .entry-delete:hover { color: #e53935; }
+
+    /* Working on specific */
+    .working-dot {
+      width: 8px;
+      height: 8px;
+      background: #4caf50;
+      border-radius: 50%;
+      margin-top: 5px;
+      flex-shrink: 0;
+    }
+
+    /* Reminder specific */
+    .reminder-check {
+      width: 16px;
+      height: 16px;
+      border: 2px solid #ddd;
+      border-radius: 4px;
+      cursor: pointer;
+      flex-shrink: 0;
+      margin-top: 2px;
       display: flex;
       align-items: center;
-      gap: 5px;
+      justify-content: center;
+      font-size: 10px;
+      color: white;
+      transition: all 0.15s;
+    }
+    .reminder-check:hover { border-color: #007bff; }
+    .reminder-check.done {
+      background: #4caf50;
+      border-color: #4caf50;
+    }
+    .entry-item.done .entry-text {
+      text-decoration: line-through;
+      color: #aaa;
     }
 
-    .classification-group.events h4 { color: #9c27b0; }
-    .classification-group.actions h4 { color: #f57c00; }
-    .classification-group.ideas h4 { color: #2196f3; }
-
-    .classification-item {
-      font-size: 14px;
-      padding: 8px 12px;
-      border-radius: 6px;
-      margin-bottom: 5px;
+    /* Note bullet */
+    .note-bullet {
+      color: #ccc;
+      margin-top: 2px;
+      flex-shrink: 0;
+      font-size: 10px;
     }
 
-    .classification-group.events .classification-item {
-      background: #f3e5f5;
-      color: #7b1fa2;
+    .empty-section {
+      padding: 4px 8px 8px;
+      color: #ccc;
+      font-size: 12px;
+      font-style: italic;
     }
 
-    .classification-group.actions .classification-item {
-      background: #fff3e0;
-      color: #e65100;
-    }
-
-    .classification-group.ideas .classification-item {
-      background: #e3f2fd;
-      color: #1565c0;
-    }
-
-    .empty-state {
-      text-align: center;
-      color: #999;
-      padding: 40px;
-    }
-
-    .loading {
-      text-align: center;
-      padding: 20px;
-      color: #666;
-    }
-
-    .spinner {
-      display: inline-block;
-      width: 20px;
-      height: 20px;
-      border: 2px solid #f3f3f3;
-      border-top: 2px solid #007bff;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      margin-right: 10px;
-      vertical-align: middle;
-    }
-
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
+    @media (max-width: 768px) {
+      .layout {
+        grid-template-columns: 1fr;
+        grid-template-rows: 1fr auto;
+      }
+      .sidebar {
+        max-height: 40vh;
+        border-top: 1px solid #e0e0e0;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Thought Capture</h1>
+  <header>Work Journal</header>
 
-    <div class="input-section">
-      <textarea id="thoughtInput" placeholder="Enter your thought... (e.g., 'Brigitte called, we need to create a new export for EDAVis')"></textarea>
-      <button id="captureBtn" onclick="captureThought()">Capture Thought</button>
+  <div class="layout">
+    <div class="chat-panel">
+      <div class="messages" id="messages">
+        <div class="msg assistant">Hey! Tell me what you're working on, things you need to remember, or any notes. I'll keep track of everything.</div>
+      </div>
+
+      <div class="chat-input">
+        <input type="text" id="input" placeholder="What's going on?" onkeydown="if(event.key==='Enter'&&!event.shiftKey)send()">
+        <button id="sendBtn" onclick="send()">Send</button>
+      </div>
     </div>
 
-    <div id="thoughtsContainer">
-      <div class="loading"><span class="spinner"></span>Loading thoughts...</div>
+    <div class="sidebar">
+      <div class="sidebar-section">
+        <div class="section-header">Working On</div>
+        <div class="entry-list" id="workingOnList">
+          <div class="empty-section">Nothing yet</div>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="section-header">Reminders</div>
+        <div class="entry-list" id="remindersList">
+          <div class="empty-section">No reminders</div>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="section-header">Notes</div>
+        <div class="entry-list" id="notesList">
+          <div class="empty-section">No notes</div>
+        </div>
+      </div>
     </div>
   </div>
 
   <script>
-    const API_URL = '/api/thoughts';
-
-    async function loadThoughts() {
+    async function loadMessages() {
       try {
-        const response = await fetch(API_URL);
-        const grouped = await response.json();
-        renderThoughts(grouped);
-      } catch (error) {
-        console.error('Failed to load thoughts:', error);
-        document.getElementById('thoughtsContainer').innerHTML =
-          '<div class="empty-state">Failed to load thoughts</div>';
+        const res = await fetch('/api/messages');
+        const messages = await res.json();
+        const container = document.getElementById('messages');
+        if (messages.length === 0) return;
+
+        container.innerHTML = messages.map(m =>
+          `<div class="msg ${m.role}">${esc(m.content)}</div>`
+        ).join('');
+        container.scrollTop = container.scrollHeight;
+      } catch (e) {
+        console.error('Failed to load messages:', e);
       }
     }
 
-    function renderThoughts(grouped) {
-      const container = document.getElementById('thoughtsContainer');
-
-      const periods = [
-        { key: 'today', label: 'Today' },
-        { key: 'yesterday', label: 'Yesterday' },
-        { key: 'thisWeek', label: 'This Week' },
-        { key: 'thisMonth', label: 'This Month' },
-        { key: 'older', label: 'Older' }
-      ];
-
-      let html = '';
-      let hasAnyThoughts = false;
-
-      for (const period of periods) {
-        const thoughts = grouped[period.key];
-        if (thoughts && thoughts.length > 0) {
-          hasAnyThoughts = true;
-          html += `<div class="time-group">
-            <h2>${period.label}</h2>
-            ${thoughts.map(renderThoughtCard).join('')}
-          </div>`;
-        }
+    async function loadEntries() {
+      try {
+        const res = await fetch('/api/entries');
+        const { workingOn, reminders, notes } = await res.json();
+        renderWorkingOn(workingOn);
+        renderReminders(reminders);
+        renderNotes(notes);
+      } catch (e) {
+        console.error('Failed to load entries:', e);
       }
-
-      if (!hasAnyThoughts) {
-        html = '<div class="empty-state">No thoughts captured yet. Start by entering a thought above!</div>';
-      }
-
-      container.innerHTML = html;
     }
 
-    function renderThoughtCard(thought) {
-      const events = thought.classifications.filter(c => c.type === 'event');
-      const actions = thought.classifications.filter(c => c.type === 'action');
-      const ideas = thought.classifications.filter(c => c.type === 'idea');
-
-      const time = new Date(thought.created_at + 'Z').toLocaleString();
-
-      return `
-        <div class="thought-card">
-          <div class="thought-content">${escapeHtml(thought.content)}</div>
-          <div class="thought-time">${time}</div>
-          <div class="classifications">
-            ${events.length > 0 ? `
-              <div class="classification-group events">
-                <h4>📅 Events</h4>
-                ${events.map(e => `<div class="classification-item">${escapeHtml(e.description)}</div>`).join('')}
-              </div>
-            ` : ''}
-            ${actions.length > 0 ? `
-              <div class="classification-group actions">
-                <h4>✅ Actions</h4>
-                ${actions.map(a => `<div class="classification-item">${escapeHtml(a.description)}</div>`).join('')}
-              </div>
-            ` : ''}
-            ${ideas.length > 0 ? `
-              <div class="classification-group ideas">
-                <h4>💡 Ideas</h4>
-                ${ideas.map(i => `<div class="classification-item">${escapeHtml(i.description)}</div>`).join('')}
-              </div>
-            ` : ''}
-          </div>
-        </div>
-      `;
-    }
-
-    function escapeHtml(text) {
-      const div = document.createElement('div');
-      div.textContent = text;
-      return div.innerHTML;
-    }
-
-    async function captureThought() {
-      const input = document.getElementById('thoughtInput');
-      const btn = document.getElementById('captureBtn');
-      const content = input.value.trim();
-
-      if (!content) {
-        alert('Please enter a thought');
+    function renderWorkingOn(items) {
+      const el = document.getElementById('workingOnList');
+      if (items.length === 0) {
+        el.innerHTML = '<div class="empty-section">Nothing yet</div>';
         return;
       }
+      el.innerHTML = items.map(w => `
+        <div class="entry-item">
+          <div class="working-dot"></div>
+          <div class="entry-text">${esc(w.project)}</div>
+          <span class="entry-time">${fmtTime(w.started_at)}</span>
+          <button class="entry-delete" onclick="deleteEntry('working_on',${w.id})">×</button>
+        </div>
+      `).join('');
+    }
 
+    function renderReminders(items) {
+      const el = document.getElementById('remindersList');
+      if (items.length === 0) {
+        el.innerHTML = '<div class="empty-section">No reminders</div>';
+        return;
+      }
+      el.innerHTML = items.map(r => `
+        <div class="entry-item${r.done ? ' done' : ''}">
+          <div class="reminder-check${r.done ? ' done' : ''}" onclick="toggleReminder(${r.id},${!r.done})">${r.done ? '✓' : ''}</div>
+          <div class="entry-text">${esc(r.content)}</div>
+          <button class="entry-delete" onclick="deleteEntry('reminders',${r.id})">×</button>
+        </div>
+      `).join('');
+    }
+
+    function renderNotes(items) {
+      const el = document.getElementById('notesList');
+      if (items.length === 0) {
+        el.innerHTML = '<div class="empty-section">No notes</div>';
+        return;
+      }
+      el.innerHTML = items.map(n => `
+        <div class="entry-item">
+          <span class="note-bullet">●</span>
+          <div class="entry-text">${esc(n.content)}</div>
+          <span class="entry-time">${fmtTime(n.created_at)}</span>
+          <button class="entry-delete" onclick="deleteEntry('notes',${n.id})">×</button>
+        </div>
+      `).join('');
+    }
+
+    async function send() {
+      const input = document.getElementById('input');
+      const btn = document.getElementById('sendBtn');
+      const msg = input.value.trim();
+      if (!msg) return;
+
+      // Add user message to chat
+      appendMsg('user', msg);
+      input.value = '';
       btn.disabled = true;
-      btn.textContent = 'Analyzing...';
+
+      // Show typing indicator
+      const typing = document.createElement('div');
+      typing.className = 'typing visible';
+      typing.textContent = 'Thinking...';
+      const container = document.getElementById('messages');
+      container.appendChild(typing);
+      container.scrollTop = container.scrollHeight;
 
       try {
-        const response = await fetch(API_URL, {
+        const res = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ content })
+          body: JSON.stringify({ message: msg })
         });
 
-        if (!response.ok) {
-          throw new Error('Failed to capture thought');
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error || 'Failed');
         }
 
-        input.value = '';
-        await loadThoughts();
-      } catch (error) {
-        console.error('Failed to capture thought:', error);
-        alert('Failed to capture thought. Please try again.');
+        const data = await res.json();
+        typing.remove();
+
+        // Build response with tool badges
+        let html = esc(data.response);
+        if (data.toolCalls?.length > 0) {
+          html += '<div class="tool-badges">';
+          for (const tc of data.toolCalls) {
+            html += `<span class="tool-badge ${tc.tool}">${tc.action} ${tc.tool.replace('_', ' ')}</span>`;
+          }
+          html += '</div>';
+        }
+
+        const msgEl = document.createElement('div');
+        msgEl.className = 'msg assistant';
+        msgEl.innerHTML = html;
+        container.appendChild(msgEl);
+        container.scrollTop = container.scrollHeight;
+
+        // Refresh sidebar
+        await loadEntries();
+      } catch (e) {
+        typing.remove();
+        appendMsg('assistant', 'Error: ' + (e.message || 'Something went wrong'));
       } finally {
         btn.disabled = false;
-        btn.textContent = 'Capture Thought';
+        input.focus();
       }
     }
 
-    // Allow Ctrl+Enter to submit
-    document.getElementById('thoughtInput').addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-        captureThought();
-      }
-    });
+    function appendMsg(role, text) {
+      const container = document.getElementById('messages');
+      const el = document.createElement('div');
+      el.className = `msg ${role}`;
+      el.textContent = text;
+      container.appendChild(el);
+      container.scrollTop = container.scrollHeight;
+    }
 
-    // Load thoughts on page load
-    loadThoughts();
+    async function deleteEntry(type, id) {
+      await fetch(`/api/${type}/${id}`, { method: 'DELETE' });
+      loadEntries();
+    }
+
+    async function toggleReminder(id, done) {
+      await fetch(`/api/reminders/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ done })
+      });
+      loadEntries();
+    }
+
+    function fmtTime(ts) {
+      const d = new Date(ts + 'Z');
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const date = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+
+      const time = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      if (date.getTime() === today.getTime()) return time;
+      if (date.getTime() === today.getTime() - 86400000) return 'yesterday';
+      return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    }
+
+    function esc(s) {
+      const d = document.createElement('div');
+      d.textContent = s;
+      return d.innerHTML;
+    }
+
+    // Initial load
+    loadMessages();
+    loadEntries();
   </script>
 </body>
 </html>

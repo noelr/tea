@@ -1,64 +1,22 @@
 import {
-  createThought,
-  addClassification,
-  getAllThoughts,
-  type ThoughtWithClassifications,
-  type Classification,
+  addMessage, getRecentMessages,
+  getAllWorkingOn, getAllReminders, getAllNotes,
+  deleteWorkingOn, deleteReminder, deleteNote,
+  updateReminder,
 } from "./db";
-import { classifyThought } from "./classifier";
+import { processMessage } from "./classifier";
+import type { MessageParam } from "@anthropic-ai/sdk/resources/messages";
 
-// Group thoughts by time period
-interface GroupedThoughts {
-  today: ThoughtWithClassifications[];
-  yesterday: ThoughtWithClassifications[];
-  thisWeek: ThoughtWithClassifications[];
-  thisMonth: ThoughtWithClassifications[];
-  older: ThoughtWithClassifications[];
-}
-
-function groupThoughtsByTime(thoughts: ThoughtWithClassifications[]): GroupedThoughts {
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
-  const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-  const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
-
-  const grouped: GroupedThoughts = {
-    today: [],
-    yesterday: [],
-    thisWeek: [],
-    thisMonth: [],
-    older: [],
-  };
-
-  for (const thought of thoughts) {
-    const createdAt = new Date(thought.created_at + "Z"); // Parse as UTC
-
-    if (createdAt >= today) {
-      grouped.today.push(thought);
-    } else if (createdAt >= yesterday) {
-      grouped.yesterday.push(thought);
-    } else if (createdAt >= weekAgo) {
-      grouped.thisWeek.push(thought);
-    } else if (createdAt >= monthAgo) {
-      grouped.thisMonth.push(thought);
-    } else {
-      grouped.older.push(thought);
-    }
-  }
-
-  return grouped;
-}
+const port = process.env.PORT || 3000;
 
 const server = Bun.serve({
-  port: 3000,
+  port,
   async fetch(req) {
     const url = new URL(req.url);
 
-    // CORS headers
     const corsHeaders = {
       "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+      "Access-Control-Allow-Methods": "GET, POST, PATCH, DELETE, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type",
     };
 
@@ -66,7 +24,7 @@ const server = Bun.serve({
       return new Response(null, { headers: corsHeaders });
     }
 
-    // Serve the frontend
+    // Serve index.html
     if (url.pathname === "/" || url.pathname === "/index.html") {
       const html = await Bun.file("public/index.html").text();
       return new Response(html, {
@@ -74,62 +32,87 @@ const server = Bun.serve({
       });
     }
 
-    // API: Get all thoughts grouped by time
-    if (url.pathname === "/api/thoughts" && req.method === "GET") {
-      const thoughts = getAllThoughts();
-      const grouped = groupThoughtsByTime(thoughts);
-      return Response.json(grouped, { headers: corsHeaders });
+    // Chat endpoint
+    if (url.pathname === "/api/chat" && req.method === "POST") {
+      try {
+        const { message } = await req.json() as { message: string };
+        if (!message || typeof message !== "string") {
+          return Response.json({ error: "Message is required" }, { status: 400, headers: corsHeaders });
+        }
+
+        // Store user message
+        addMessage("user", message);
+
+        // Build conversation history from recent messages (with timestamps for context)
+        const recentMessages = getRecentMessages(30).reverse();
+        const history: MessageParam[] = recentMessages.map(m => ({
+          role: m.role as "user" | "assistant",
+          content: m.role === "user" ? `[${m.created_at}] ${m.content}` : m.content,
+        }));
+
+        // Process with LLM
+        const result = await processMessage(history);
+
+        // Store assistant response
+        addMessage("assistant", result.response);
+
+        return Response.json({
+          response: result.response,
+          toolCalls: result.toolCalls,
+        }, { headers: corsHeaders });
+      } catch (error) {
+        console.error("Chat error:", error);
+        const message = error instanceof Error ? error.message : "Unknown error";
+        return Response.json({ error: message }, { status: 500, headers: corsHeaders });
+      }
     }
 
-    // API: Create a new thought
-    if (url.pathname === "/api/thoughts" && req.method === "POST") {
-      try {
-        const body = await req.json();
-        const { content } = body as { content: string };
+    // Get all entries for sidebar
+    if (url.pathname === "/api/entries" && req.method === "GET") {
+      return Response.json({
+        workingOn: getAllWorkingOn(),
+        reminders: getAllReminders(),
+        notes: getAllNotes(),
+      }, { headers: corsHeaders });
+    }
 
-        if (!content || typeof content !== "string") {
-          return Response.json({ error: "Content is required" }, { status: 400, headers: corsHeaders });
-        }
+    // Get chat history
+    if (url.pathname === "/api/messages" && req.method === "GET") {
+      const messages = getRecentMessages(50).reverse();
+      return Response.json(messages, { headers: corsHeaders });
+    }
 
-        // Create the thought
-        const thought = createThought(content);
+    // Delete working_on entry
+    const workingOnMatch = url.pathname.match(/^\/api\/working_on\/(\d+)$/);
+    if (workingOnMatch && req.method === "DELETE") {
+      const deleted = deleteWorkingOn(Number(workingOnMatch[1]));
+      return Response.json({ ok: deleted }, { headers: corsHeaders });
+    }
 
-        // Classify the thought using AI
-        const classifications = await classifyThought(content);
+    // Delete reminder
+    const reminderDeleteMatch = url.pathname.match(/^\/api\/reminders\/(\d+)$/);
+    if (reminderDeleteMatch && req.method === "DELETE") {
+      const deleted = deleteReminder(Number(reminderDeleteMatch[1]));
+      return Response.json({ ok: deleted }, { headers: corsHeaders });
+    }
 
-        // Store classifications
-        const storedClassifications: Classification[] = [];
+    // Toggle reminder done
+    const reminderPatchMatch = url.pathname.match(/^\/api\/reminders\/(\d+)$/);
+    if (reminderPatchMatch && req.method === "PATCH") {
+      const { done } = await req.json() as { done: boolean };
+      const updated = updateReminder(Number(reminderPatchMatch[1]), undefined, done ? 1 : 0);
+      return Response.json({ ok: !!updated, entry: updated }, { headers: corsHeaders });
+    }
 
-        for (const idea of classifications.ideas) {
-          const c = addClassification(thought.id, "idea", idea);
-          storedClassifications.push(c);
-        }
-
-        for (const event of classifications.events) {
-          const c = addClassification(thought.id, "event", event);
-          storedClassifications.push(c);
-        }
-
-        for (const action of classifications.actions) {
-          const c = addClassification(thought.id, "action", action);
-          storedClassifications.push(c);
-        }
-
-        return Response.json(
-          { ...thought, classifications: storedClassifications },
-          { status: 201, headers: corsHeaders }
-        );
-      } catch (error) {
-        console.error("Error creating thought:", error);
-        return Response.json(
-          { error: "Failed to create thought" },
-          { status: 500, headers: corsHeaders }
-        );
-      }
+    // Delete note
+    const noteMatch = url.pathname.match(/^\/api\/notes\/(\d+)$/);
+    if (noteMatch && req.method === "DELETE") {
+      const deleted = deleteNote(Number(noteMatch[1]));
+      return Response.json({ ok: deleted }, { headers: corsHeaders });
     }
 
     return new Response("Not Found", { status: 404, headers: corsHeaders });
   },
 });
 
-console.log(`🧠 Thought Capture running at http://localhost:${server.port}`);
+console.log(`Work Journal running at http://localhost:${server.port}`);

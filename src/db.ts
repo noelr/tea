@@ -1,10 +1,29 @@
 import { Database } from "bun:sqlite";
 
-const db = new Database("thoughts.db");
+// Use Railway volume mount path if available, local file otherwise
+const volumePath = process.env.RAILWAY_VOLUME_MOUNT_PATH;
+const dbPath = volumePath ? `${volumePath}/journal.db` : "journal.db";
+const db = new Database(dbPath);
 
-// Initialize the database schema
 db.run(`
-  CREATE TABLE IF NOT EXISTS thoughts (
+  CREATE TABLE IF NOT EXISTS working_on (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    project TEXT NOT NULL,
+    started_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
+`);
+
+db.run(`
+  CREATE TABLE IF NOT EXISTS reminders (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    content TEXT NOT NULL,
+    done INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
+`);
+
+db.run(`
+  CREATE TABLE IF NOT EXISTS notes (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     content TEXT NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -12,68 +31,106 @@ db.run(`
 `);
 
 db.run(`
-  CREATE TABLE IF NOT EXISTS classifications (
+  CREATE TABLE IF NOT EXISTS messages (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    thought_id INTEGER NOT NULL,
-    type TEXT NOT NULL CHECK (type IN ('idea', 'event', 'action')),
-    description TEXT NOT NULL,
-    FOREIGN KEY (thought_id) REFERENCES thoughts(id) ON DELETE CASCADE
+    role TEXT NOT NULL,
+    content TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )
 `);
 
-export interface Thought {
+// Types
+export interface WorkingOn {
+  id: number;
+  project: string;
+  started_at: string;
+}
+
+export interface Reminder {
+  id: number;
+  content: string;
+  done: number;
+  created_at: string;
+}
+
+export interface Note {
   id: number;
   content: string;
   created_at: string;
 }
 
-export interface Classification {
+export interface Message {
   id: number;
-  thought_id: number;
-  type: "idea" | "event" | "action";
-  description: string;
+  role: string;
+  content: string;
+  created_at: string;
 }
 
-export interface ThoughtWithClassifications extends Thought {
-  classifications: Classification[];
+// Working On
+export function createWorkingOn(project: string): WorkingOn {
+  return db.prepare("INSERT INTO working_on (project) VALUES (?) RETURNING *").get(project) as WorkingOn;
 }
 
-export function createThought(content: string): Thought {
-  const stmt = db.prepare("INSERT INTO thoughts (content) VALUES (?) RETURNING *");
-  return stmt.get(content) as Thought;
+export function updateWorkingOn(id: number, project: string): WorkingOn | null {
+  return db.prepare("UPDATE working_on SET project = ? WHERE id = ? RETURNING *").get(project, id) as WorkingOn | null;
 }
 
-export function addClassification(
-  thoughtId: number,
-  type: Classification["type"],
-  description: string
-): Classification {
-  const stmt = db.prepare(
-    "INSERT INTO classifications (thought_id, type, description) VALUES (?, ?, ?) RETURNING *"
-  );
-  return stmt.get(thoughtId, type, description) as Classification;
+export function deleteWorkingOn(id: number): boolean {
+  const result = db.prepare("DELETE FROM working_on WHERE id = ?").run(id);
+  return result.changes > 0;
 }
 
-export function getAllThoughts(): ThoughtWithClassifications[] {
-  const thoughts = db.prepare("SELECT * FROM thoughts ORDER BY created_at DESC").all() as Thought[];
-
-  return thoughts.map((thought) => {
-    const classifications = db
-      .prepare("SELECT * FROM classifications WHERE thought_id = ?")
-      .all(thought.id) as Classification[];
-    return { ...thought, classifications };
-  });
+export function getAllWorkingOn(): WorkingOn[] {
+  return db.prepare("SELECT * FROM working_on ORDER BY started_at DESC").all() as WorkingOn[];
 }
 
-export function getThoughtById(id: number): ThoughtWithClassifications | null {
-  const thought = db.prepare("SELECT * FROM thoughts WHERE id = ?").get(id) as Thought | null;
-  if (!thought) return null;
+// Reminders
+export function createReminder(content: string): Reminder {
+  return db.prepare("INSERT INTO reminders (content) VALUES (?) RETURNING *").get(content) as Reminder;
+}
 
-  const classifications = db
-    .prepare("SELECT * FROM classifications WHERE thought_id = ?")
-    .all(id) as Classification[];
+export function updateReminder(id: number, content?: string, done?: number): Reminder | null {
+  const current = db.prepare("SELECT * FROM reminders WHERE id = ?").get(id) as Reminder | null;
+  if (!current) return null;
+  const newContent = content ?? current.content;
+  const newDone = done ?? current.done;
+  return db.prepare("UPDATE reminders SET content = ?, done = ? WHERE id = ? RETURNING *").get(newContent, newDone, id) as Reminder;
+}
 
-  return { ...thought, classifications };
+export function deleteReminder(id: number): boolean {
+  const result = db.prepare("DELETE FROM reminders WHERE id = ?").run(id);
+  return result.changes > 0;
+}
+
+export function getAllReminders(): Reminder[] {
+  return db.prepare("SELECT * FROM reminders ORDER BY done ASC, created_at DESC").all() as Reminder[];
+}
+
+// Notes
+export function createNote(content: string): Note {
+  return db.prepare("INSERT INTO notes (content) VALUES (?) RETURNING *").get(content) as Note;
+}
+
+export function updateNote(id: number, content: string): Note | null {
+  return db.prepare("UPDATE notes SET content = ? WHERE id = ? RETURNING *").get(content, id) as Note | null;
+}
+
+export function deleteNote(id: number): boolean {
+  const result = db.prepare("DELETE FROM notes WHERE id = ?").run(id);
+  return result.changes > 0;
+}
+
+export function getAllNotes(): Note[] {
+  return db.prepare("SELECT * FROM notes ORDER BY created_at DESC").all() as Note[];
+}
+
+// Messages
+export function addMessage(role: string, content: string): Message {
+  return db.prepare("INSERT INTO messages (role, content) VALUES (?, ?) RETURNING *").get(role, content) as Message;
+}
+
+export function getRecentMessages(limit: number = 50): Message[] {
+  return db.prepare("SELECT * FROM messages ORDER BY created_at DESC LIMIT ?").all(limit) as Message[];
 }
 
 export default db;
