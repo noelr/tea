@@ -104,8 +104,13 @@ function buildSystemPrompt(): string {
   const workingOn = getAllWorkingOn();
   const reminders = getAllReminders();
   const notes = getAllNotes();
+  const now = new Date().toISOString();
 
-  let context = `You are a work journal assistant. You help the user log their daily work sessions. You have 3 tools:
+  let context = `You are a work journal assistant. You help the user log their daily work sessions.
+
+Current date/time: ${now}
+
+You have 3 tools:
 
 1. **working_on** - Track what the user is working on (projects, tasks). Use when they say things like "working on X now", "switching to Y", "starting Z".
 2. **reminder** - A todo/reminder list. Use when the user mentions things they need to do, follow-ups, calls to make, things for later. You can also mark items as done.
@@ -115,7 +120,9 @@ You can call multiple tools in a single response if the user's message contains 
 When the user mentions something actionable, use the appropriate tool(s) AND respond conversationally.
 Keep responses short and natural. Don't be overly formal.
 If the user asks to update or delete something, look at the current entries below to find the right ID.
-If the user just wants to chat or ask a question without logging anything, just respond normally without using tools.`;
+If the user just wants to chat or ask a question without logging anything, just respond normally without using tools.
+
+User messages include timestamps in the format [YYYY-MM-DD HH:MM:SS]. Use these to answer questions about what happened on specific days (e.g., "what did I work on yesterday?").`;
 
   if (workingOn.length > 0) {
     context += `\n\nCurrent "Working On" entries:\n${workingOn.map(w => `  [id:${w.id}] ${w.project} (since ${w.started_at})`).join("\n")}`;

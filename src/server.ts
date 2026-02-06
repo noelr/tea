@@ -43,11 +43,11 @@ const server = Bun.serve({
         // Store user message
         addMessage("user", message);
 
-        // Build conversation history from recent messages
+        // Build conversation history from recent messages (with timestamps for context)
         const recentMessages = getRecentMessages(30).reverse();
         const history: MessageParam[] = recentMessages.map(m => ({
           role: m.role as "user" | "assistant",
-          content: m.content,
+          content: m.role === "user" ? `[${m.created_at}] ${m.content}` : m.content,
         }));
 
         // Process with LLM
